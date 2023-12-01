@@ -46,8 +46,9 @@ struct bookPriIndex
 // Structures to define secondary indices
 struct book_SecIndex
 {
-    char author_id[30],ID[13];
-}book_SIn[100], A_stemp;
+    char author_id[50],bookID[30];
+}book_SIn[200], B_Stemp;
+
 
 
 struct authorSecIndex
@@ -246,26 +247,44 @@ void writeBookPriIndex() {
 
 
 // Function to create the secondary indices
-void createBookSecIndex()
-{
+//void createBookSecIndex()
+//{
+//    fstream recordFile;
+//    recordFile.open("book_data.txt", ios::in);
+////     Iterate through each book record
+//    for (int i=0; i<book_no; i++)
+//    {
+//
+//        recordFile.getline(bookSiz, 5, '|');
+//        recordFile.getline(ISBN, 30, '|');
+//        recordFile.getline(bookTitle, 50, '|');
+//        recordFile.getline(Author_ID, 50, '\n');
+//
+//        strcpy_s(book_SIn[i].author_id, Author_ID);
+//
+//        strcpy_s(book_SIn[i].bookID, ISBN);
+//
+//    }
+//    recordFile.close();
+//
+//}
+
+void createBookSecIndex() {
     fstream recordFile;
     recordFile.open("book_data.txt", ios::in);
-//     Iterate through each book record
-    for (int i=0; i<book_no; i++)
-    {
 
+    // Iterate through each book record
+    for (int i = 0; i < book_no; i++) {
         recordFile.getline(bookSiz, 5, '|');
         recordFile.getline(ISBN, 30, '|');
         recordFile.getline(bookTitle, 50, '|');
         recordFile.getline(Author_ID, 50, '\n');
 
-        strcpy_s(SIn[i].name, bookTitle);
-
-        strcpy_s(SIn[i].id, ISBN);
-
+        // Store author ID and book ID in book_SIn array
+        strcpy_s(book_SIn[i].author_id, Author_ID);
+        strcpy_s(book_SIn[i].bookID, ISBN);
     }
     recordFile.close();
-
 }
 
 
@@ -302,13 +321,14 @@ void writeAuthorSecIndex()
 }
 
 
-void writeBookSecIndex()
-{
+
+void writeBookSecIndex() {
     fstream SIndexFile;
     SIndexFile.open("book_Secondary.txt", ios::out);
-    for (int i=0; i<book_no; i++)
-    {
-        SIndexFile << book_SIn[i].author_id << "|" << book_SIn[i].ID << "\n";
+
+    // Iterate through each entry in the secondary index
+    for (int i = 0; i < book_no; i++) {
+        SIndexFile << book_SIn[i].author_id << "|" << book_SIn[i].bookID << "\n";
     }
     SIndexFile.close();
 }
@@ -339,7 +359,7 @@ void readBookSecIndex()
     for(int i=0; i<book_no; i++)
     {
         ff.getline(book_SIn[i].author_id, 50, '|');
-        ff.getline(book_SIn[i].ID, 30, '\n');
+        ff.getline(book_SIn[i].bookID, 30, '\n');
 
     }
     ff.close();
@@ -413,15 +433,16 @@ void sortBookSecIndex()
         {
             if (strcmp(book_SIn[j].author_id, book_SIn[j + 1].author_id) > 0)
             {
-                A_stemp = book_SIn[j];
+                B_Stemp = book_SIn[j];
                 book_SIn[j] =book_SIn[j + 1];
-                book_SIn[j + 1] = A_stemp;
+                book_SIn[j + 1] = B_Stemp;
             }
         }
 
     }
 
 }
+
 
 int AddAuthor()
 {
