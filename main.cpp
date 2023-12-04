@@ -898,6 +898,27 @@ void retrive_record(char* ind)
 
 int main()
 {
+    Author_readRecNo();
+    readRecNo();
+    
+    if (author_no > 0) {
+        createAuthorPriIndex();
+        sortAuthorPriIndex();
+        writeAuthorPriIndex();
+        createAuthorSecIndex();
+        sortAuthorSecIndex();
+        writeAuthorSecIndex();
+    }
+
+    if (book_no > 0) {
+        createBookPriIndex();
+        sortBookPriIndex();
+        writeBookPriIndex();
+        createBookSecIndex();
+        sortBookSecIndex();
+        writeBookSecIndex();
+    }
+
     int choice;
     string q;
     do
