@@ -443,11 +443,10 @@ int AddBook()
     cout << "Enter Author id : ";
     cin >> book.Author_ID;
 
-    //    char* offset = SearchAuthorById(book.Author_ID, 0, book_no);
-    //    if (offset == NULL) {
-    //        cout << "Author ID doesn't exist. Please add the author first.\n";
-    //        return -1;
-    //    }
+    if (SearchAuthorById(book.Author_ID, 0, author_no) == NULL) {
+        cout << "Author ID doesn't exist. Please add the author first.\n";
+        return -1;
+    }
 
     book.bookSiz = 0;
     book.bookSiz += strlen(book.bookTitle);
