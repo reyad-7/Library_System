@@ -8,7 +8,8 @@ char author_Name[50], author_id[13], authorCursor[5], author_Address[50], author
 char bookTitle[50], Author_ID[50], bookCursor[5], ISBN[30], bookSiz[5];
 int header = -1, authorHeader = -1;
 
-multimap<string, string> invertedList;
+multimap<string, string> invertedListAuthor;
+multimap<string, string> invertedListBook;
 
 // Structures to define the record formats
 struct Author
@@ -266,22 +267,22 @@ void sortBookPriIndex()
         }
     }
 }
-void writeAuthorSec(Author A)
+void createAuthorSec(Author A)
 {
     fstream secAuthor;
     secAuthor.open("author_Secondary.txt", ios::out);
 
     fstream linkedList;
-    linkedList.open("linkedList.txt", ios::out);
+    linkedList.open("linkedListAuthor.txt", ios::out);
 
-    invertedList.insert({A.author_Name, A.author_id});
+    invertedListAuthor.insert({A.author_Name, A.author_id});
 
-    for (int i = 0; i < invertedList.size(); i++)
+    for (int i = 0; i < invertedListAuthor.size(); i++)
     {
 
-        const auto &pair1 = *next(invertedList.begin(), i);
-        const auto &pair2 = *next(invertedList.begin(), i - 1);
-        const auto &pair3 = *next(invertedList.begin(), i + 1);
+        const auto &pair1 = *next(invertedListAuthor.begin(), i);
+        const auto &pair2 = *next(invertedListAuthor.begin(), i - 1);
+        const auto &pair3 = *next(invertedListAuthor.begin(), i + 1);
 
         if (i == 0 || pair1.first != pair2.first)
         {
@@ -299,6 +300,84 @@ void writeAuthorSec(Author A)
     }
     secAuthor.close();
     linkedList.close();
+}
+void createBookSec(Book B)
+{
+    fstream secBook;
+    secBook.open("book_Secondary.txt", ios::out);
+
+    fstream linkedList;
+    linkedList.open("linkedListBook.txt", ios::out);
+
+    invertedListBook.insert({B.Author_ID, B.ISBN});
+
+    for (int i = 0; i < invertedListBook.size(); i++)
+    {
+
+        const auto &pair1 = *next(invertedListBook.begin(), i);
+        const auto &pair2 = *next(invertedListBook.begin(), i - 1);
+        const auto &pair3 = *next(invertedListBook.begin(), i + 1);
+
+        if (i == 0 || pair1.first != pair2.first)
+        {
+            secBook << pair1.first << "|" << i << "|" << endl;
+        }
+        if (pair1.first != pair3.first)
+        {
+            linkedList << i << "|" << pair1.second << "|" << -1 << endl;
+        }
+
+        if (pair1.first == pair3.first)
+        {
+            linkedList << i << "|" << pair1.second << "|" << i + 1 << endl;
+        }
+    }
+    secBook.close();
+    linkedList.close();
+}
+
+char *SearchAuthorById(char *id, int low, int high)
+{
+    int mid;
+    while (low < high)
+    {
+        mid = (low + high) / 2;
+        if (strcmp(Author_in[mid].ID, id) == 0)
+        {
+            return Author_in[mid].offset;
+        }
+        if (strcmp(Author_in[mid].ID, id) > 0)
+        {
+            return SearchAuthorById(id, low, mid);
+        }
+        if (strcmp(Author_in[mid].ID, id) < 0)
+        {
+            return SearchAuthorById(id, mid + 1, high);
+        }
+    }
+    return NULL;
+}
+
+char *SearchBookById(char *id, int low, int high)
+{
+    int mid;
+    while (low < high)
+    {
+        mid = (low + high) / 2;
+        if (strcmp(in[mid].id, id) == 0)
+        {
+            return in[mid].ind;
+        }
+        if (strcmp(in[mid].id, id) > 0)
+        {
+            return SearchBookById(id, low, mid);
+        }
+        if (strcmp(in[mid].id, id) < 0)
+        {
+            return SearchBookById(id, mid + 1, high);
+        }
+    }
+    return NULL;
 }
 
 int AddAuthor()
@@ -347,7 +426,7 @@ int AddAuthor()
 
     writeAuthorPriIndex();
 
-    writeAuthorSec(A);
+    createAuthorSec(A);
 }
 
 int AddBook()
@@ -363,6 +442,12 @@ int AddBook()
 
     cout << "Enter Author id : ";
     cin >> book.Author_ID;
+
+    //    char* offset = SearchAuthorById(book.Author_ID, 0, book_no);
+    //    if (offset == NULL) {
+    //        cout << "Author ID doesn't exist. Please add the author first.\n";
+    //        return -1;
+    //    }
 
     book.bookSiz = 0;
     book.bookSiz += strlen(book.bookTitle);
@@ -392,6 +477,8 @@ int AddBook()
     sortBookPriIndex();
 
     writeBookPriIndex();
+
+    createBookSec(book);
 }
 
 void retriveAuthorRecord(char *offset)
@@ -428,50 +515,6 @@ void retriveBookRecord(char *ind)
     cout << ISBN << "    " << bookTitle << "    " << Author_ID << '\n'
          << endl;
     ff.close();
-}
-
-char *SearchAuthorById(char *id, int low, int high)
-{
-    int mid;
-    while (low < high)
-    {
-        mid = (low + high) / 2;
-        if (strcmp(Author_in[mid].ID, id) == 0)
-        {
-            return Author_in[mid].offset;
-        }
-        if (strcmp(Author_in[mid].ID, id) > 0)
-        {
-            return SearchAuthorById(id, low, mid);
-        }
-        if (strcmp(Author_in[mid].ID, id) < 0)
-        {
-            return SearchAuthorById(id, mid + 1, high);
-        }
-    }
-    return NULL;
-}
-
-char *SearchBookById(char *id, int low, int high)
-{
-    int mid;
-    while (low < high)
-    {
-        mid = (low + high) / 2;
-        if (strcmp(in[mid].id, id) == 0)
-        {
-            return in[mid].ind;
-        }
-        if (strcmp(in[mid].id, id) > 0)
-        {
-            return SearchBookById(id, low, mid);
-        }
-        if (strcmp(in[mid].id, id) < 0)
-        {
-            return SearchBookById(id, mid + 1, high);
-        }
-    }
-    return NULL;
 }
 
 // void deleteAuthorFromDataFile(char* st_id)
@@ -722,23 +765,23 @@ int main()
     Author_readRecNo();
     readRecNo();
 
-    //    if (author_no > 0) {
-    //        createAuthorPriIndex();
-    //        sortAuthorPriIndex();
-    //        writeAuthorPriIndex();
-    //        createAuthorSecIndex();
-    //        sortAuthorSecIndex();
-    //        writeAuthorSecIndex();
-    //    }
+    //        if (author_no > 0) {
+    //            createAuthorPriIndex();
+    //            sortAuthorPriIndex();
+    //            writeAuthorPriIndex();
+    //            createAuthorSecIndex();
+    //            sortAuthorSecIndex();
+    //            writeAuthorSecIndex();
+    //        }
     //
-    //    if (book_no > 0) {
-    //        createBookPriIndex();
-    //        sortBookPriIndex();
-    //        writeBookPriIndex();
-    //        createBookSecIndex();
-    //        sortBookSecIndex();
-    //        writeBookSecIndex();
-    //    }
+    //        if (book_no > 0) {
+    //            createBookPriIndex();
+    //            sortBookPriIndex();
+    //            writeBookPriIndex();
+    //            createBookSecIndex();
+    //            sortBookSecIndex();
+    //            writeBookSecIndex();
+    //        }
 
     int choice;
     string q;
