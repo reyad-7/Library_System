@@ -391,6 +391,11 @@ int AddAuthor()
     cout << "Enter Author ID: ";
     cin >> A.author_id;
 
+    if (SearchAuthorById(A.author_id, 0, author_no) != NULL) {
+        cout << "Author ID already exists. Please use a different ID.\n";
+        return -1;
+    }
+
     cout << "Enter author Address: ";
     cin >> A.author_Address;
 
@@ -439,6 +444,11 @@ int AddBook()
 
     cout << "Enter book ID: ";
     cin >> book.ISBN;
+
+    if (SearchBookById(book.ISBN, 0, book_no) != NULL){
+        cout << "Book ID already exists. Please use a different ID.\n";
+        return -1;
+    }
 
     cout << "Enter Author id : ";
     cin >> book.Author_ID;
@@ -802,54 +812,54 @@ int main()
 
         switch (choice)
         {
-        case 1:
-        {
-            AddAuthor();
-            break;
-        }
-        case 2:
-        {
-            AddBook();
-            break;
-        }
-        case 3:
-        {
-            //                updateauthor();
-            break;
-        }
-        case 4:
-        {
-            //                updatebook();
-            break;
-        }
-        case 5:
-        {
-            //                deletebook();
-            break;
-        }
-        case 6:
-        {
-            //                deleteauthor();
-            break;
-        }
-        case 7:
-        {
-            PrintAuthorByID();
-            break;
-        }
-        case 8:
-        {
-            PrintBookByID();
-            break;
-        }
-        case 9:
-        {
+            case 1:
+            {
+                AddAuthor();
+                break;
+            }
+            case 2:
+            {
+                AddBook();
+                break;
+            }
+            case 3:
+            {
+                //                updateauthor();
+                break;
+            }
+            case 4:
+            {
+                //                updatebook();
+                break;
+            }
+            case 5:
+            {
+                //                deletebook();
+                break;
+            }
+            case 6:
+            {
+                //                deleteauthor();
+                break;
+            }
+            case 7:
+            {
+                PrintAuthorByID();
+                break;
+            }
+            case 8:
+            {
+                PrintBookByID();
+                break;
+            }
+            case 9:
+            {
 
-            cout << "Enter Query";
-            cin >> q;
-            //                writeQuery(q);
-            break;
-        }
+                cout << "Enter Query";
+                cin >> q;
+                //                writeQuery(q);
+                break;
+            }
         }
     } while (choice != 10);
 
