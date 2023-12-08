@@ -1285,22 +1285,22 @@ int main()
         }
         case 3:
         {
-            //                updateauthor();
+        updateAuthorName();
             break;
         }
         case 4:
         {
-            //                updatebook();
+        updateBookTitle();
             break;
         }
         case 5:
         {
-            //                deletebook();
+                       deleteBook();
             break;
         }
         case 6:
         {
-            //                deleteauthor();
+//                            deleteAuthor();
             break;
         }
         case 7:
