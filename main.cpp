@@ -525,6 +525,103 @@ void retriveBookRecord(char *ind)
          << endl;
     ff.close();
 }
+void updateBookTitle()
+{
+    char ISBNU[30];
+
+    cout << "Enter the ISBN of the book to update: ";
+    cin >> ISBNU;
+
+    // Open the data file in read mode
+    ifstream inputFile("book_data.txt");
+
+    // Check if the file is open
+    if (!inputFile.is_open())
+    {
+        cout << "Error opening file!" << endl;
+        return;
+    }
+
+    // Create a temporary file
+    ofstream tempFile("temp_book_data.txt");
+
+    // Check if the temporary file is open
+    if (!tempFile.is_open())
+    {
+        cout << "Error creating temporary file!" << endl;
+        inputFile.close();
+        return;
+    }
+
+    // Variables to store record data
+    char bookSiz[5], ISBN[30], bookTitle[50], Author_ID[50];
+
+    // Variable to check if the record is found
+    bool Found = false;
+
+    // Read the first record
+    inputFile.getline(bookSiz, 5, '|');
+    while (inputFile.getline(ISBN, 30, '|'))
+    {
+        inputFile.getline(bookTitle, 50, '|');
+        inputFile.getline(Author_ID, 50, '\n');
+
+        // Check if the ISBN matches
+        if (strcmp(ISBN, ISBNU) == 0)
+        {
+            // Display the existing record
+            cout << "Existing Record:\n";
+            cout << "ID    book Title    author_id" << endl;
+            cout << ISBN << "    " << bookTitle << "    " << Author_ID << '\n' << endl;
+
+            // Get the new book title
+            cout << "Enter the new book title: ";
+            cin >> bookTitle;
+
+            // Calculate the size of the updated record
+            int updatedSize = strlen(bookSiz) + strlen(ISBN) + strlen(bookTitle) + strlen(Author_ID) + 3;
+
+            // Write the updated record to the temporary file
+            tempFile << updatedSize << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "\n";
+
+            // Set the flag to indicate that the record is found and updated
+            Found = true;
+
+            cout << "Book title updated successfully!" << endl;
+        }
+        else
+        {
+            // Write the unchanged record to the temporary file
+            tempFile << bookSiz << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "\n";
+        }
+
+        // Read the next record size
+        inputFile.getline(bookSiz, 5, '|');
+    }
+
+    // Check if the record is not found
+    if (!Found)
+    {
+        cout << "Book not found. Unable to update." << endl;
+    }
+
+    // Close the input and temporary files
+    inputFile.close();
+    tempFile.close();
+
+    // Replace the original file with the temporary one
+    if (remove("book_data.txt") != 0)
+    {
+        cout << "Error deleting original file!" << endl;
+        return;
+    }
+
+    if (rename("temp_book_data.txt", "book_data.txt") != 0)
+    {
+        cout << "Error renaming temporary file!" << endl;
+        return;
+    }
+}
 
 // void deleteAuthorFromDataFile(char* st_id)
 //{
