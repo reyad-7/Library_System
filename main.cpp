@@ -40,10 +40,17 @@ struct bookPriIndex
 } in[200], temp;
 
 // Structures to define secondary indices
+struct bookLinkedList
+{
+    char ind[50], bookID[30],next[30];
+} bookLinkedList[200],bookLinkedList_temp;
+
+
 struct book_SecIndex
 {
-    char author_id[50], bookID[30];
+    char authorId[50], ind[30];
 } book_SIn[200], B_Stemp;
+
 
 struct authorSecIndex
 {
@@ -336,6 +343,42 @@ void createBookSec(Book B)
     linkedList.close();
 }
 
+// Function to read the book secondary index file into the book_SecIndex structure
+// to use it in search for SearchBookByAuthorId
+
+void readBookSecIndex()
+{
+    fstream secBook;
+    secBook.open("book_Secondary.txt", ios::in);
+
+    for (int i = 0; i < 200 && !secBook.eof(); i++)
+    {
+        secBook.getline(book_SIn[i].authorId, 50, '|');
+        secBook.getline(book_SIn[i].ind, 30, '\n');
+    }
+
+    secBook.close();
+}
+
+// Function to read the linked list file into the bookLinkedList structure
+
+void readBookLinkedList()
+{
+    fstream linkedList;
+    linkedList.open("linkedListBook.txt", ios::in);
+
+    for (int i = 0; i < 200 && !linkedList.eof(); i++)
+    {
+        linkedList.getline(bookLinkedList[i].ind, 50, '|');
+        linkedList.getline(bookLinkedList[i].bookID, 30, '|');
+        linkedList.getline(bookLinkedList[i].next, 30, '\n');
+    }
+
+    linkedList.close();
+}
+
+
+
 char *SearchAuthorById(char *id, int low, int high)
 {
     int mid;
@@ -391,7 +434,8 @@ int AddAuthor()
     cout << "Enter Author ID: ";
     cin >> A.author_id;
 
-    if (SearchAuthorById(A.author_id, 0, author_no) != NULL) {
+    if (SearchAuthorById(A.author_id, 0, author_no) != NULL)
+    {
         cout << "Author ID already exists. Please use a different ID.\n";
         return -1;
     }
@@ -445,7 +489,8 @@ int AddBook()
     cout << "Enter book ID: ";
     cin >> book.ISBN;
 
-    if (SearchBookById(book.ISBN, 0, book_no) != NULL){
+    if (SearchBookById(book.ISBN, 0, book_no) != NULL)
+    {
         cout << "Book ID already exists. Please use a different ID.\n";
         return -1;
     }
@@ -453,7 +498,8 @@ int AddBook()
     cout << "Enter Author id : ";
     cin >> book.Author_ID;
 
-    if (SearchAuthorById(book.Author_ID, 0, author_no) == NULL) {
+    if (SearchAuthorById(book.Author_ID, 0, author_no) == NULL)
+    {
         cout << "Author ID doesn't exist. Please add the author first.\n";
         return -1;
     }
@@ -508,6 +554,45 @@ void retriveAuthorRecord(char *offset)
     ff.close();
 }
 
+void retriveAuthorName(char *offset)
+{
+    int x = atoi(offset);
+    fstream ff;
+    ff.open("Author_data.txt", ios::in);
+    ff.seekg(x, ios::beg);
+    ff.getline(offset, 10, '|');
+    ff.getline(author_Name, 50, '|');
+    ff.getline(author_id, 13, '|');
+    ff.getline(author_Address, 50, '|');
+
+    cout << '\n'
+         << "Name" << endl;
+    cout << author_Name << endl;
+    ff.close();
+}
+
+//used to search in the secondary book index to get the ind for this book
+
+char* SearchBookByAuthorId(char* authorId, int low, int high) {
+    readBookSecIndex();
+
+    int mid;
+
+    while (low < high) {
+        mid = (low + high) / 2;
+        if (strcmp(book_SIn[mid].authorId, authorId) == 0) {
+            return book_SIn[mid].ind;
+        }
+        if (strcmp(book_SIn[mid].authorId, authorId) > 0) {
+            high = mid; // Adjust high to continue searching in the left half
+        } else {
+            low = mid + 1; // Adjust low to continue searching in the right half
+        }
+    }
+    return NULL;
+}
+
+
 void retriveBookRecord(char *ind)
 {
     int x = atoi(ind);
@@ -525,6 +610,7 @@ void retriveBookRecord(char *ind)
          << endl;
     ff.close();
 }
+
 
 void updateAuthorName()
 {
@@ -734,179 +820,10 @@ void updateBookTitle()
 //     ff.close();
 // }
 
-// void deleteBookFromDataFile(char* ind)
-//{
-//     readHeader();
-//     int x =atoi(ind);
-//     fstream ff;
-//     ff.open("book_data.txt");
-//     ff.seekp(x, ios::beg);
-//     ff<<'*'<<header<<'|';
-//     ff.close();
-// }
 
-// void deleteAuthorFromPriIndex(char* id)
-//{
-//     Author_readRecNo();
-//     readAuthorPriIndex();
-//     for(int i=0; i<author_no; i++)
-//     {
-//         if(strcmp(Author_in[i].ID, id)==0)
-//         {
-//             int h = atoi(Author_in[i].offset);
-//             writeAuthorHeader(h);
-//             author_no--;
-//             for(int j = i; j<author_no; j++)
-//             {
-//                 strcpy(Author_in[j].ID, Author_in[j+1].ID);
-//                 strcpy(Author_in[j].offset, Author_in[j+1].offset);
-//             }
-//         }
-//     }
-//     Author_writeRecNo();
-//     writeAuthorPriIndex();
-// }
-
-// void deleteBookFromPriIndex(char* id)
-//{
-//     readRecNo();
-//     readBookPriIndex();
-//     for(int i=0; i<book_no; i++)
-//     {
-//         if(strcmp(in[i].id, id)==0)
-//         {
-//             int h = atoi(in[i].ind);
-//             writeHeader(h);
-//             book_no--;
-//             for(int j = i; j<book_no; j++)
-//             {
-//                 strcpy(in[j].id, in[j+1].id);
-//                 strcpy(in[j].ind, in[j+1].ind);
-//             }
-//         }
-//     }
-//     writeRecNo();
-//     writeBookPriIndex();
-// }
-
-// void deleteAuthor()
-//{
-//     Author_readRecNo();
-//     readAuthorPriIndex();
-//     cout<<"Enter the id: ";
-//     cin>>Author_ID;
-//     if (SearchAuthorById(Author_ID,0,author_no)!=NULL)
-//     {
-//         deleteAuthorFromDataFile(SearchAuthorById(Author_ID,0,author_no));
-//         deleteAuthorFromPriIndex(Author_ID);
-//         cout<<"Deleted Successfully"<<endl;
-//         return;
-//     }
-//     cout << "Deletion failed record not found"<<endl;
-// }
-
-// void deleteDepartment()
-//{
-//     readRecNo();
-//     readBookPriIndex();
-//     cout<<"Enter the id: ";
-//     cin>>ISBN;
-//     if (SearchBookById(ISBN,0,book_no)!=NULL)
-//     {
-//         deleteBookFromDataFile(SearchBookById(ISBN,0,book_no));
-//
-//         deleteBookFromPriIndex(ISBN);
-//         cout<<"Deleted Successfully"<<endl;
-//         return;
-//     }
-//     cout << "deletion failed record not found\n";
-// }
-
-// char * SeachAuthortById(char * id,int low,int high)
-//{
-//     bool flag=false;
-//     for(int i=0; i<author_no; i++)
-//     {
-//         if(strcmp(Author_in[i].ID, id) == 0)
-//         {
-//             flag = true;
-//             retriveAuthorRecord(SearchAuthorById(Author_in[i].ID,0,author_no));
-//         }
-//     }
-//     if(!flag)
-//     {
-//         return NULL;
-//     }
-//     else
-//     {
-//         return author_id;
-//     }
-// }
-
-// char * SeachDepartmentByName (char * name,int low,int high)
-//{
-//     int mid;
-//     while(low<high)
-//     {
-//         mid = (high + low)/2;
-//         if(strcmp(SIn[mid].name, name) == 0)
-//         {
-//             return SIn[mid].id;
-//         }
-//         if(strcmp(SIn[mid].name, name) > 0)
-//         {
-//             return SeachDepartmentByName(name,low,mid);
-//         }
-//         if(strcmp(SIn[mid].name, name) < 0)
-//         {
-//             return SeachDepartmentByName(name,mid+1,high);
-//         }
-//     }
-//     return NULL;
-// }
-
-// void PrintAuthorByDeptid()
-//{
-//     readEmpSecIndex();
-//     readEmpPriIndex();
-//
-//     cout<<"Enter the Dept ID: ";
-//     cin>>Emp_Dept_id;
-//     char * id = SeachEmployeetByDeptid(Emp_Dept_id,0,Emp_no);
-//     if(id==NULL)
-//     {
-//         cout<<"DeptID not found"<<endl;
-//         return;
-//     }
-// }
-
-// void PrintDeptByName()
-//{
-//     readDeptSecIndex();
-//     readDeptPriIndex();
-//
-//
-//     cout<<"Enter the name: ";
-//     cin>>DeptName;
-//     char * id = SeachDepartmentByName(DeptName,0,Dept_no);
-//     cout<<id;
-//     if(id!= nullptr)
-//     {
-//         if(SearchDepartment(id,0,Dept_no) != nullptr)
-//         {
-//             retrive_record(SearchDepartment(SeachDepartmentByName(DeptName,0,Dept_no),0,Dept_no));
-//             return;
-//         }
-//     }
-//     cout<<"Department not found"<<endl;
-//     return;
-// }
-
-void PrintBookByID()
+void PrintBookByID(char *ISBN)
 {
     readBookPriIndex();
-    cout << "Enter the id: ";
-    cin >> ISBN;
     if (SearchBookById(ISBN, 0, book_no) != NULL)
     {
         retriveBookRecord(SearchBookById(ISBN, 0, author_no));
@@ -930,67 +847,126 @@ void PrintAuthorByID()
     return;
 }
 
-// void writeQuery(string query)
-//{
-//     query=to_lower(query);
-//     char ch[13];
-//     string q=(query);
-//     if(q=="select all employee where dept_id")
-//     {
-//         cout<<"Enter dept_id ";
-//         cin>>ch;
-//         Emp_retrive_record(SeachEmployeetByDeptid(ch,0,Emp_no));
-//     }
-//     else if(q=="select all employee where employee_id")
-//     {
-//         cout<<"Enter Employee_id ";
-//         cin>>ch;
-//         Emp_retrive_record(SearchEmployee_By_id(ch,0,Emp_no));
-//     }
-//     else if(q=="select all department where dept_id")
-//     {
-//         cout<<"Enter dept_id ";
-//         cin>>ch;
-//         retrive_record(SearchDepartment(ch,0,Dept_no));
-//     }
-//     else if(q=="select all department where dept_name")
-//     {
-//         cout<<"Enter dept_name ";
-//         cin>>ch;
-//         retrive_record(SeachDepartmentByName(ch,0,Dept_no));
-//     }
-//     else
-//     {
-//         cout<<"wrong Query";
-//     }
+
+// Function to print all books for a given author ID from the inverted list
+//void PrintBooksByAuthorID(const char* ind) {
+//    fstream linkedListFile;
+//    readBookLinkedList();
+//    linkedListFile.open("linkedListBook.txt", ios::in);
 //
-// }
+//    if (SearchBookByAuthorId==NULL){
+//        cout << "author id not found in the secondary index \n";
+//        return;
+//    }
+//    else{
+//        while (!linkedListFile.eof()) {
+//            linkedListFile.getline(bookLinkedList_temp.ind, 10, '|');
+//            linkedListFile.getline(bookLinkedList_temp.bookID, 30, '|');
+//            linkedListFile.getline(bookLinkedList_temp.next, 30, '\n');
+//
+//            if (strcmp(bookLinkedList_temp.ind, ind) == 0) {
+//                // Call the function to print the book details
+//                PrintBookByID(bookLinkedList_temp.bookID);
+//
+//                if (strcmp(bookLinkedList_temp.next, "-1") != 0) {
+//                    // Continue printing the remaining books for this author ID
+//                    PrintBookByID(bookLinkedList_temp.next);
+//                }
+//                return;
+//            }
+//        }
+//
+//    }
+//    linkedListFile.close();
+//}
+
+
+void PrintBooksByAuthorID(const char* ind) {
+    fstream linkedListFile;
+    readBookLinkedList();
+    linkedListFile.open("linkedListBook.txt", ios::in);
+
+    if (ind == NULL) {
+        cout << "Author id not found in the secondary index.\n";
+        return;
+    } else {
+        while (!linkedListFile.eof()) {
+            linkedListFile.getline(bookLinkedList_temp.ind, 10, '|');
+            linkedListFile.getline(bookLinkedList_temp.bookID, 30, '|');
+            linkedListFile.getline(bookLinkedList_temp.next, 30, '\n');
+
+            if (strcmp(bookLinkedList_temp.ind, ind) == 0) {
+                // Call the function to print the book details
+                PrintBookByID(bookLinkedList_temp.bookID);
+
+                if (strcmp(bookLinkedList_temp.next, "-1") != 0) {
+                    // Continue printing the remaining books for this author ID
+                    PrintBooksByAuthorID(SearchBookByAuthorId(bookLinkedList_temp.next, 0, book_no));
+                }
+                return;
+            }
+        }
+    }
+
+    linkedListFile.close();
+}
+
+void writeQuery() {
+    cout << "Enter Query: ";
+    cin.ignore(); // Clear any remaining characters in the input buffer
+    string query;
+    string tolowerQuery;
+    getline(cin,query); // Read the entire line including spaces
+
+// Convert the query to lowercase for case-insensitive matching
+    for (int i = 0; i < query.size(); ++i) {
+        tolowerQuery+= tolower(query[i]);
+    }
+
+    cout << "\n" <<tolowerQuery<<"\n";
+
+    if (tolowerQuery.find("select all from authors where author id=") != string::npos) {
+        cout << "case 1\n";
+        PrintAuthorByID();
+    }
+
+    else if (tolowerQuery.find("select all from books where author id=") != string::npos) {
+        cout << "case 2\n";
+        char authorId[50];
+        cout << "Enter Author ID: ";
+        cin >> authorId;
+        PrintBooksByAuthorID(SearchBookByAuthorId(authorId,0,author_no));
+
+        //        PrintBookByID(authorId);
+        ////        retriveBookRecord(SearchBookById(authorId, 0, book_no));
+    }
+
+    else if (tolowerQuery.find("select author name from authors where author id=")!=string::npos) {
+        cout << "case 3\n";
+        char authorId[50];
+        cout << "Enter Author ID: ";
+        cin >> authorId;
+        if (SearchAuthorById(authorId, 0, author_no) != NULL)
+        {
+            retriveAuthorName(SearchAuthorById(authorId, 0, author_no));
+            return;
+        }
+        cout << "Author not found" << endl;
+        return;
+    }
+
+    else {
+        cout << "Invalid Query" << endl;
+    }
+}
+
 
 int main()
 {
     Author_readRecNo();
     readRecNo();
 
-    //        if (author_no > 0) {
-    //            createAuthorPriIndex();
-    //            sortAuthorPriIndex();
-    //            writeAuthorPriIndex();
-    //            createAuthorSecIndex();
-    //            sortAuthorSecIndex();
-    //            writeAuthorSecIndex();
-    //        }
-    //
-    //        if (book_no > 0) {
-    //            createBookPriIndex();
-    //            sortBookPriIndex();
-    //            writeBookPriIndex();
-    //            createBookSecIndex();
-    //            sortBookSecIndex();
-    //            writeBookSecIndex();
-    //        }
-
     int choice;
-    string q;
     do
     {
         cout << "\nwelcome to our library system :) \nAvailable Options :\n"
@@ -1009,54 +985,54 @@ int main()
 
         switch (choice)
         {
-            case 1:
-            {
-                AddAuthor();
-                break;
-            }
-            case 2:
-            {
-                AddBook();
-                break;
-            }
-            case 3:
-            {
-                //                updateauthor();
-                break;
-            }
-            case 4:
-            {
-                //                updatebook();
-                break;
-            }
-            case 5:
-            {
-                //                deletebook();
-                break;
-            }
-            case 6:
-            {
-                //                deleteauthor();
-                break;
-            }
-            case 7:
-            {
-                PrintAuthorByID();
-                break;
-            }
-            case 8:
-            {
-                PrintBookByID();
-                break;
-            }
-            case 9:
-            {
-
-                cout << "Enter Query";
-                cin >> q;
-                //                writeQuery(q);
-                break;
-            }
+        case 1:
+        {
+            AddAuthor();
+            break;
+        }
+        case 2:
+        {
+            AddBook();
+            break;
+        }
+        case 3:
+        {
+            //                updateauthor();
+            break;
+        }
+        case 4:
+        {
+            //                updatebook();
+            break;
+        }
+        case 5:
+        {
+            //                deletebook();
+            break;
+        }
+        case 6:
+        {
+            //                deleteauthor();
+            break;
+        }
+        case 7:
+        {
+            PrintAuthorByID();
+            break;
+        }
+        case 8:
+        {
+            char id[12] ;
+            cout << "enter id : ";
+            cin >> id;
+            PrintBookByID(id);
+            break;
+        }
+        case 9:
+        {
+            writeQuery();
+            break;
+        }
         }
     } while (choice != 10);
 
