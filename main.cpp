@@ -54,7 +54,7 @@ struct book_SecIndex
 
 struct authorSecIndex
 {
-    char name[50], id[30];
+    char name[50], ind[30];
 } SIn[100], stemp;
 
 void readHeader()
@@ -89,7 +89,7 @@ void writeAuthorHeader(int header)
 }
 
 // Functions to read and write the number of records
-
+//just read the authors no
 void Author_readRecNo()
 {
     fstream nFile;
@@ -104,6 +104,9 @@ void Author_writeRecNo()
     nFile << author_no;
     nFile.close();
 }
+
+//for book file
+//just write the authors no
 
 void readRecNo()
 {
@@ -126,6 +129,7 @@ void writeRecNo()
 void createAuthorPriIndex()
 {
     // Initialize a variable to keep track of the current offset in the data file
+    //current is just a pointer to track each record with its offset
     int current = 0;
     fstream file;
     file.open("Author_data.txt", ios::in);
@@ -274,6 +278,8 @@ void sortBookPriIndex()
         }
     }
 }
+
+// Function to create secondary index for authors
 void createAuthorSec(Author A)
 {
     fstream secAuthor;
@@ -282,32 +288,43 @@ void createAuthorSec(Author A)
     fstream linkedList;
     linkedList.open("linkedListAuthor.txt", ios::out);
 
+    // Insert author information into the inverted list
     invertedListAuthor.insert({A.author_Name, A.author_id});
 
+    // Iterate through each element in the inverted list
     for (int i = 0; i < invertedListAuthor.size(); i++)
     {
-
+        // Retrieve the current, previous, and next pairs in the inverted list
         const auto &pair1 = *next(invertedListAuthor.begin(), i);
         const auto &pair2 = *next(invertedListAuthor.begin(), i - 1);
         const auto &pair3 = *next(invertedListAuthor.begin(), i + 1);
 
+        // Write the author name and its corresponding position in the secondary index
+        // if it is the first occurrence or the author name is different from the previous one
         if (i == 0 || pair1.first != pair2.first)
         {
             secAuthor << pair1.first << "|" << i << "|" << endl;
         }
+
+        // Write the position and author ID to the linked list file and make its pointer -1 if it is the first record for that name
         if (pair1.first != pair3.first)
         {
             linkedList << i << "|" << pair1.second << "|" << -1 << endl;
         }
 
+        // Write the position, author ID, and next position to the linked list file
         if (pair1.first == pair3.first)
         {
             linkedList << i << "|" << pair1.second << "|" << i + 1 << endl;
         }
     }
+
+    // Close the files
     secAuthor.close();
     linkedList.close();
 }
+
+// Function to create secondary index for books
 void createBookSec(Book B)
 {
     fstream secBook;
@@ -316,66 +333,74 @@ void createBookSec(Book B)
     fstream linkedList;
     linkedList.open("linkedListBook.txt", ios::out);
 
+    // Insert book information into the inverted list
     invertedListBook.insert({B.Author_ID, B.ISBN});
 
+    // Iterate through each element in the inverted list
     for (int i = 0; i < invertedListBook.size(); i++)
     {
-
+        // Retrieve the current, previous, and next pairs in the inverted list
         const auto &pair1 = *next(invertedListBook.begin(), i);
         const auto &pair2 = *next(invertedListBook.begin(), i - 1);
         const auto &pair3 = *next(invertedListBook.begin(), i + 1);
 
+        // Write the author ID and its corresponding position in the secondary index
+        // if it is the first occurrence or the author ID is different from the previous one
         if (i == 0 || pair1.first != pair2.first)
         {
             secBook << pair1.first << "|" << i << "|" << endl;
         }
+
+        // Write the position and book ID to the linked list file
         if (pair1.first != pair3.first)
         {
             linkedList << i << "|" << pair1.second << "|" << -1 << endl;
         }
 
+        // Write the position, book ID, and next position to the linked list file
         if (pair1.first == pair3.first)
         {
             linkedList << i << "|" << pair1.second << "|" << i + 1 << endl;
         }
     }
+
     secBook.close();
     linkedList.close();
 }
 
+
 // Function to read the book secondary index file into the book_SecIndex structure
 // to use it in search for SearchBookByAuthorId
-
 void readBookSecIndex()
 {
     fstream secBook;
     secBook.open("book_Secondary.txt", ios::in);
 
-    for (int i = 0; i < 200 && !secBook.eof(); i++)
+    int i = 0;
+    while (i < 200 && secBook.getline(book_SIn[i].authorId, 50, '|') && secBook.getline(book_SIn[i].ind, 30, '\n'))
     {
-        secBook.getline(book_SIn[i].authorId, 50, '|');
-        secBook.getline(book_SIn[i].ind, 30, '\n');
+        ++i;
     }
 
     secBook.close();
 }
 
 // Function to read the linked list file into the bookLinkedList structure
-
-void readBookLinkedList()
-{
-    fstream linkedList;
-    linkedList.open("linkedListBook.txt", ios::in);
-
-    for (int i = 0; i < 200 && !linkedList.eof(); i++)
-    {
-        linkedList.getline(bookLinkedList[i].ind, 50, '|');
-        linkedList.getline(bookLinkedList[i].bookID, 30, '|');
-        linkedList.getline(bookLinkedList[i].next, 30, '\n');
-    }
-
-    linkedList.close();
-}
+////do not delete *it is needed
+//void readBookLinkedList()
+//{
+//    fstream linkedList;
+//    linkedList.open("linkedListBook.txt", ios::in);
+//
+//    for (int i = 0; i < 200 && !linkedList.eof(); i++)
+//    {
+//        linkedList.getline(bookLinkedList[i].ind, 50, '|');
+//        linkedList.getline(bookLinkedList[i].bookID, 30, '|');
+//        linkedList.getline(bookLinkedList[i].next, 30, '\n');
+//    }
+//
+//    linkedList.close();
+//}
 
 
 
@@ -539,8 +564,6 @@ int AddBook()
 
 
 
-
-
 void retriveAuthorRecord(char *offset)
 {
     int x = atoi(offset);
@@ -577,16 +600,14 @@ void retriveAuthorName(char *offset)
 }
 
 //used to search in the secondary book index to get the ind for this book
-
-char* SearchBookByAuthorId(char* authorId, int low, int high) {
+char* SearchInBookSecByAuthorId(char* authorId, int low, int high) {
     readBookSecIndex();
-
     int mid;
 
     while (low < high) {
         mid = (low + high) / 2;
         if (strcmp(book_SIn[mid].authorId, authorId) == 0) {
-            return book_SIn[mid].ind;
+            return book_SIn[mid].authorId;  // Return the authorId if found
         }
         if (strcmp(book_SIn[mid].authorId, authorId) > 0) {
             high = mid; // Adjust high to continue searching in the left half
@@ -594,7 +615,7 @@ char* SearchBookByAuthorId(char* authorId, int low, int high) {
             low = mid + 1; // Adjust low to continue searching in the right half
         }
     }
-    return NULL;
+    return nullptr;  // Return nullptr if not found
 }
 
 
@@ -838,6 +859,7 @@ void PrintBookByID(char *ISBN)
     return;
 }
 
+
 void PrintAuthorByID()
 {
     readAuthorPriIndex();
@@ -853,13 +875,14 @@ void PrintAuthorByID()
 }
 
 
-// Function to print all books for a given author ID from the inverted list
+//// Function to print all books for a given author ID from the inverted list
 //void PrintBooksByAuthorID(const char* ind) {
 //    fstream linkedListFile;
 //    readBookLinkedList();
+//
 //    linkedListFile.open("linkedListBook.txt", ios::in);
 //
-//    if (SearchBookByAuthorId==NULL){
+//    if (ind ==NULL){
 //        cout << "author id not found in the secondary index \n";
 //        return;
 //    }
@@ -871,12 +894,16 @@ void PrintAuthorByID()
 //
 //            if (strcmp(bookLinkedList_temp.ind, ind) == 0) {
 //                // Call the function to print the book details
-//                PrintBookByID(bookLinkedList_temp.bookID);
+//                cout <<"teeeeeest";
+//                cout << bookLinkedList_temp.bookID<<"\n";
 //
-//                if (strcmp(bookLinkedList_temp.next, "-1") != 0) {
-//                    // Continue printing the remaining books for this author ID
-//                    PrintBookByID(bookLinkedList_temp.next);
-//                }
+////                if (strcmp(bookLinkedList_temp.next, "-1") != 0) {
+////                    // Continue printing the remaining books for this author ID
+////                    auto tempInd =  bookLinkedList_temp.next;
+////
+////                    PrintBookByID(bookLinkedList_temp.next);
+////                    // print the id of this ind
+////                }
 //                return;
 //            }
 //        }
@@ -886,38 +913,30 @@ void PrintAuthorByID()
 //}
 
 
-void PrintBooksByAuthorID(const char* ind) {
-    fstream linkedListFile;
-    readBookLinkedList();
-    linkedListFile.open("linkedListBook.txt", ios::in);
+// Function to loop through the inverted list for books that contain the author ID and print the books
+void printBooksFromMap(char* authorId) {
+    // Check if the authorId exists in the secondary index
+    char* authorIdCheck = SearchInBookSecByAuthorId(authorId, 0, author_no);
 
-    if (ind == NULL) {
-        cout << "Author id not found in the secondary index.\n";
-        return;
-    } else {
-        while (!linkedListFile.eof()) {
-            linkedListFile.getline(bookLinkedList_temp.ind, 10, '|');
-            linkedListFile.getline(bookLinkedList_temp.bookID, 30, '|');
-            linkedListFile.getline(bookLinkedList_temp.next, 30, '\n');
-
-            if (strcmp(bookLinkedList_temp.ind, ind) == 0) {
-                // Call the function to print the book details
-                PrintBookByID(bookLinkedList_temp.bookID);
-
-                if (strcmp(bookLinkedList_temp.next, "-1") != 0) {
-                    // Continue printing the remaining books for this author ID
-                    PrintBooksByAuthorID(SearchBookByAuthorId(bookLinkedList_temp.next, 0, book_no));
-                }
-                return;
+    if (authorIdCheck != nullptr) {
+        cout << "Author ID already exists.\n";
+        // Retrieve books associated with the author ID from the inverted list
+        auto range = invertedListBook.equal_range(authorIdCheck);
+        if (range.first != invertedListBook.end()) {
+            cout << "Books by Author ID " << authorIdCheck << ":\n";
+            for (auto it = range.first; it != range.second; ++it) {
+//                 Print each book ID (ISBN)
+                cout << "Book ID: " << it->second << endl;
+//                PrintBookByID(it->second);
+//                Add a function call to print book details using ISBN (it->second)
             }
+        } else {
+            cout << "No books found for Author ID " << authorIdCheck << ".\n";
         }
+    } else {
+        cout << "Author ID not found in secondary index.\n";
     }
-
-    linkedListFile.close();
 }
-
-
-
 
 
 void deleteBookFromDataFile(char* ind)
@@ -951,6 +970,282 @@ void deleteAuthorFromPriIndex(char* id)
     }
     Author_writeRecNo();
     writeAuthorPriIndex();
+}
+
+
+void readBookSIn()
+{
+    readRecNo();
+    fstream f;
+    f.open("book_Secondary.txt", ios::in);
+    for (int i = 0; i < book_no; i++)
+    {
+        f.getline(book_SIn[i].authorId, 13, '|');
+        f.getline(book_SIn[i].ind, 10, '\n');
+    }
+    f.close();
+
+}
+
+void deleteBookFromSIn(char* id) {
+    readRecNo();
+    readBookSIn();
+    int low = 0;
+    int high = book_no - 1;
+    int mid, foundIndex = -1;
+
+    while (low <= high) {
+        mid = (low + high) / 2;
+        if (strcmp(book_SIn[mid].authorId, id) == 0) {
+            foundIndex = mid;
+            break;
+        } else if (strcmp(book_SIn[mid].authorId, id) < 0) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+        cout<<"id " <<book_SIn[mid].authorId<<endl;
+
+    }
+
+}
+
+void PrintBookByID()
+{
+    readBookPriIndex();
+    cout << "Enter the id: ";
+    cin >> ISBN;
+    if (SearchBookById(ISBN, 0, book_no) != NULL)
+    {
+        retriveBookRecord(SearchBookById(ISBN, 0, author_no));
+        return;
+    }
+    cout << "Book not found" << endl;
+    return;
+}
+
+//void PrintAuthorByID()
+//{
+//    readAuthorPriIndex();
+//    cout << "Enter the id: ";
+//    cin >> Author_ID;
+//    if (SearchAuthorById(Author_ID, 0, author_no) != NULL)
+//    {
+//        retriveAuthorRecord(SearchAuthorById(Author_ID, 0, author_no));
+//        return;
+//    }
+//    cout << "Author not found" << endl;
+//    return;
+//}
+
+
+void loadAuthorInvertedList() {
+    ifstream secFile("author_Secondary.txt");
+    ifstream llFile("linkedListAuthor.txt");
+
+    int name, secPointer, llPointer, x;
+    string id;
+
+    while (secFile >> name >> secPointer) {
+        llFile.clear();
+        llFile.seekg(0, ios::beg);
+
+        while (llFile >> llPointer >> id >> x) {
+            if (secPointer == llPointer) {
+                invertedListAuthor.insert({to_string(name), id});
+                while (x != -1) {
+                    llFile >> llPointer >> id >> x;
+                    invertedListAuthor.insert({to_string(name), id});
+                }
+                break;
+            }
+        }
+    }
+    secFile.close();
+    llFile.close();
+}
+
+void deleteAuthorName(char name[], char id[]) {
+    loadAuthorInvertedList();
+    auto range = invertedListAuthor.equal_range(name);
+    for (auto it = range.first; it != range.second; ++it) {
+        if (it->second == id) {
+            invertedListAuthor.erase(it);
+            break;
+        }
+    }
+
+    ofstream f("author_Secondary.txt", ios::trunc);
+    ofstream LLFile("linkedListAuthor.txt", ios::trunc);
+
+    auto it = invertedListAuthor.begin();
+
+    for (int i = 0; it != invertedListAuthor.end(); ++it, ++i) {
+        if (i == 0 || it->first != prev(it)->first) {
+            f << it->first << "|" << i << endl;
+        }
+
+        if (it->first == next(it)->first) {
+            LLFile << i << "|" << it->second << "|" << i + 1 << endl;
+        } else {
+            LLFile << i << "|" << it->second << "|" << -1 << endl;
+        }
+    }
+    LLFile.close();
+    f.close();
+}
+
+void deleteAuthor()
+{
+    char authorU[13];
+    char name[50];
+    string h;
+    cout << "Enter the ID: ";
+    cin >> authorU;
+    cout << "Enter the Name: ";
+    cin >> name;
+
+    char*  offset = SearchAuthorById(authorU,0,author_no);
+    deleteAuthorFromPriIndex(authorU);
+    deleteAuthorName(name,authorU);
+    ifstream inputFile("Author_data.txt");
+    if (!inputFile.is_open())
+    {
+        cout << "Error opening file!" << endl;
+        return;
+    }
+    ofstream tempFile("temp_Author_data.txt");
+
+    if (!tempFile.is_open())
+    {
+        cout << "Error creating temporary file!" << endl;
+        inputFile.close();
+        return;
+    }
+    char authorSiz[5], author_Name[50], author_id[13], author_Address[50];
+
+    bool Found = false;
+
+    inputFile.getline(authorSiz, 5, '|');
+    while (inputFile.getline(author_Name, 50, '|'))
+    {
+        inputFile.getline(author_id, 13, '|');
+        inputFile.getline(author_Address, 50, '\n');
+
+        if (strcmp(author_id, authorU) == 0)
+        {
+            cout << "Existing Record:\n";
+            cout << "Name   ID    Address" << endl;
+            cout << author_Name << "    " << author_id << "    " << author_Address << '\n' << endl;
+
+            int authorSize = strlen(authorSiz) + strlen(author_Name) + strlen(author_id) + strlen(author_Address) + 3;
+
+            ifstream f;
+            f.open("Author_Header.txt", ios::in | ios::out);
+            f >> h;
+            f.close();
+            tempFile << "*" << h << "|" << authorSize << "|";
+            int remainingSpace = authorSize - (strlen(authorSiz) + strlen(author_Name) + strlen(author_id) + strlen(author_Address) + 3);
+            for (int i = 0; i < remainingSpace; ++i)
+            {
+                tempFile << " ";
+            }
+            h = offset;
+            ofstream f1;
+            f1.open("Author_Header.txt", ios::trunc);
+            f1.seekp(0, ios::beg);
+            f1 << h;
+            f1.close();
+            tempFile << "\n";
+
+            Found = true;
+
+            cout << "Author header updated successfully!" << endl;
+        }
+        else
+        {
+            tempFile << authorSiz << "|" << author_Name << "|" << author_id << "|" << author_Address << "\n";
+        }
+
+        inputFile.getline(authorSiz, 5, '|');
+
+
+    }
+
+    if (!Found)
+    {
+        cout << "Author not found. Unable to update header." << endl;
+    }
+    inputFile.close();
+    tempFile.close();
+
+    if (remove("Author_data.txt") != 0)
+    {
+        cout << "Error deleting original file!" << endl;
+        return;
+    }
+
+    if (rename("temp_Author_data.txt", "Author_data.txt") != 0)
+    {
+        cout << "Error renaming temporary file!" << endl;
+        return;
+    }
+}
+
+void loadBookInvertedList() {
+    ifstream secFile("book_Secondary.txt");
+    ifstream llFile("linkedListBook.txt");
+
+    int i, secPointer, llPointer, x;
+    string id;
+
+    while (secFile >> i >> secPointer) {
+        llFile.clear();
+        llFile.seekg(0, ios::beg);
+
+        while (llFile >> llPointer >> id >> x) {
+            if (secPointer == llPointer) {
+                invertedListBook.insert({to_string(i), id});
+                while (x != -1) {
+                    llFile >> llPointer >> id >> x;
+                    invertedListBook.insert({to_string(i), id});
+                }
+                break;
+            }
+        }
+    }
+    secFile.close();
+    llFile.close();
+}
+
+void deleteAuthorID(char ID[]) {
+    loadBookInvertedList();
+
+    auto i = invertedListAuthor.begin();
+    while (i != invertedListAuthor.end()) {
+        if (i->second == ID) {
+            i = invertedListAuthor.erase(i);
+        } else {
+            ++i;
+        }
+    }
+    ofstream f(" book_Secondary.txt", ios::trunc);
+    ofstream LLFile("linkedListBook.txt", ios::trunc);
+    auto it = invertedListAuthor.begin();
+
+    for (int i = 0; it != invertedListAuthor.end(); ++it, ++i) {
+        if (i == 0 || it->first != prev(it)->first) {
+            f << it->first << "|" << i << endl;
+        }
+
+        if (it->first == next(it)->first) {
+            LLFile << i << "|" << it->second << "|" << i + 1 << endl;
+        } else {
+            LLFile << i << "|" << it->second << "|" << -1 << endl;
+        }
+    }
+    LLFile.close();
+    f.close();
 }
 
 void deleteBookFromPriIndex(char* id)
@@ -991,175 +1286,128 @@ void deleteBookFromPriIndex(char* id)
 }
 
 
-void readBookSIn()
-{
-    readRecNo();
-    fstream f;
-    f.open("book_Secondary.txt", ios::in);
-    for (int i = 0; i < book_no; i++)
-    {
-        f.getline(book_SIn[i].authorId, 13, '|');
-        f.getline(book_SIn[i].ind, 10, '\n');
-    }
-    f.close();
-
-}
-
-void deleteBookFromSIn(char* id) {
-    readRecNo();
-    readBookSIn();
-    int low = 0;
-    int high = book_no - 1;
-    int mid, foundIndex = -1;
-
-    while (low <= high) {
-        mid = (low + high) / 2;
-        if (strcmp(book_SIn[mid].authorId, id) == 0) {
-            foundIndex = mid;
-            break;
-        } else if (strcmp(book_SIn[mid].authorId, id) < 0) {
-            low = mid + 1;
-        } else {
-            high = mid - 1;
-        }
-        cout<<"id " <<book_SIn[mid].authorId<<endl;
-
-    }
-
-}
 void deleteBook()
 {
-    readRecNo();
-    readBookPriIndex();
-    cout<<"Enter the id: ";
-    cin>>ISBN;
-    if (SearchBookById(ISBN,0,book_no)!=NULL)
-    {
-        deleteBookFromDataFile(SearchBookById(ISBN,0,book_no));
-        deleteBookFromPriIndex(ISBN);
-        cout<<"Deleted Successfully"<<endl;
-        return;
-    }
-    cout << "deletion failed record not found\n";
-}
-
-void PrintBookByID()
-{
-    readBookPriIndex();
-    cout << "Enter the id: ";
+    char authorU[13];
+    char ISBN[30];
+    string h;
+    cout << "Enter the Book ISBN: ";
     cin >> ISBN;
-    if (SearchBookById(ISBN, 0, book_no) != NULL)
+    cout << "Enter the Author ID: ";
+    cin >> authorU;
+
+//    deleteAuthorID(authorU);
+  deleteBookFromPriIndex(ISBN);
+
+    char*  offset = SearchBookById(ISBN,0,book_no);
+
+    ifstream inputFile("book_data.txt");
+    if (!inputFile.is_open())
     {
-        retriveBookRecord(SearchBookById(ISBN, 0, author_no));
+        cout << "Error opening file!" << endl;
         return;
     }
-    cout << "Book not found" << endl;
-    return;
+    ofstream tempFile("temp_Book_data.txt");
+
+    if (!tempFile.is_open())
+    {
+        cout << "Error creating temporary file!" << endl;
+        inputFile.close();
+        return;
+    }
+    char bookSiz[5], bookISBN[30], bookTitle[50], Author_ID[50];
+
+    bool Found = false;
+
+    inputFile.getline(bookSiz, 5, '|');
+    while (inputFile.getline(bookISBN, 30, '|')) {
+        inputFile.getline(bookTitle, 50, '|');
+        inputFile.getline(Author_ID, 50, '\n');
+
+        if (strcmp(bookISBN, ISBN) == 0) {
+            int updatedSize = strlen(bookSiz) + strlen(bookISBN) + strlen(bookTitle) + strlen(Author_ID) + 3;
+            tempFile << updatedSize << "|" << bookISBN << "|" << bookTitle << "|" << Author_ID << "\n";
+
+            ifstream f;
+            f.open("Book_Header.txt", ios::in | ios::out);
+            f >> h;
+            f.close();
+            tempFile << "*" << h << "|" << updatedSize << "|";
+            int remainingSpace = updatedSize -
+                                 (strlen(bookSiz) + strlen(bookISBN) + strlen(bookTitle) + strlen(Author_ID) +
+                                  3);
+            for (int i = 0; i < remainingSpace; ++i) {
+                tempFile << " ";
+            }
+            h = offset;
+            ofstream f1;
+            f1.open("Book_Header.txt", ios::trunc);
+            f1.seekp(0, ios::beg);
+            f1 << h;
+            f1.close();
+            tempFile << "\n";
+
+            Found = true;
+
+            cout << "Author header updated successfully!" << endl;
+        }
+        else
+        {
+            tempFile << bookSiz << "|" << bookISBN << "|" << bookTitle << "|" << Author_ID << "\n";
+        }
+        inputFile.getline(bookSiz, 5, '|');
+    }
+
+    inputFile.close();
+    tempFile.close();
+
+    if (remove("Book_data.txt") != 0)
+    {
+        cout << "Error deleting!" << endl;
+        return;
+    }
+
+    if (rename("temp_Book_data.txt", "book_data.txt") != 0)
+    {
+        cout << "Error renaming temporary file!" << endl;
+        return;
+    }
+//    f.close();
+//    LLFile.close();
 }
 
-//void PrintAuthorByID()
-//{
-//    readAuthorPriIndex();
-//    cout << "Enter the id: ";
-//    cin >> Author_ID;
-//    if (SearchAuthorById(Author_ID, 0, author_no) != NULL)
-//    {
-//        retriveAuthorRecord(SearchAuthorById(Author_ID, 0, author_no));
-//        return;
-//    }
-//    cout << "Author not found" << endl;
-//    return;
+
 //}
 
-
-
-
-void loadInvertedList() {
-    ifstream secFile("author_Secondary.txt");
-    ifstream llFile("linkedListAuthor.txt");
-
-
-    int i, secPointer, llPointer, x;
-    string id;
-
-    while (secFile >> i >> secPointer) {
-        llFile.clear();
-        llFile.seekg(0, ios::beg);
-
-        while (llFile >> llPointer >> id >> x) {
-            if (secPointer == llPointer) {
-                invertedListAuthor.insert({to_string(i), id});
-                while (x != -1) {
-                    llFile >> llPointer >> id >> x;
-                    invertedListAuthor.insert({to_string(i), id});
-                }
-                break;
-            }
-        }
-    }
-    secFile.close();
-    llFile.close();
-}
-
-void deleteAuthorID(string ID) {
-    loadInvertedList();
-    auto it = invertedListAuthor.find(ID);
-    if (it != invertedListAuthor.end()) {
-        invertedListAuthor.erase(it);
-    }
-    for (it = invertedListAuthor.begin(); it != invertedListAuthor.end(); ++it){
-        cout<<it->first<<" "<<it->second;
-    }
-
-    ofstream f("author_Secondary.txt", ios::trunc);
-    ofstream LLFile("linkedListAuthor.txt", ios::trunc);
-
-    int i = 0;
-    for (it = invertedListAuthor.begin(); it != invertedListAuthor.end(); ++it, ++i) {
-        if (i == 0 || it->first != prev(it)->first) {
-            f << it->first << "|" << i << endl;
-        }
-
-        if (next(it) != invertedListAuthor.end() && it->first == next(it)->first) {
-            LLFile << i << "|" << it->second << "|" << i + 1 << endl;
-        } else {
-            LLFile << i << "|" << it->second << "|" << -1 << endl;
-        }
-    }
-
-    f.close();
-    LLFile.close();
-}
-
-void deleteAuthorName(char name[], char id[]) {
-    loadInvertedList();
-    auto range = invertedListAuthor.equal_range(name);
-    for (auto it = range.first; it != range.second; ++it) {
-        if (it->second == id) {
-            invertedListAuthor.erase(it);
-            break;
-        }
-    }
-
-    ofstream f("author_Secondary.txt", ios::trunc);
-    ofstream LLFile("linkedListAuthor.txt", ios::trunc);
-
-    auto it = invertedListAuthor.begin();
-
-    for (int i = 0; it != invertedListAuthor.end(); ++it, ++i) {
-        if (i == 0 || it->first != prev(it)->first) {
-            f << it->first << " " << i << endl;
-        }
-
-        if (it->first == next(it)->first) {
-            LLFile << i << "|" << it->second << "|" << i + 1 << endl;
-        } else {
-            LLFile << i << "|" << it->second << "|" << -1 << endl;
-        }
-    }
-    LLFile.close();
-    f.close();
-}
+//void deleteAuthorName(char name[], char id[]) {
+//    loadInvertedList();
+//    auto range = invertedListAuthor.equal_range(name);
+//    for (auto it = range.first; it != range.second; ++it) {
+//        if (it->second == id) {
+//            invertedListAuthor.erase(it);
+//            break;
+//        }
+//    }
+//
+//    ofstream f("author_Secondary.txt", ios::trunc);
+//    ofstream LLFile("linkedListAuthor.txt", ios::trunc);
+//
+//    auto it = invertedListAuthor.begin();
+//
+//    for (int i = 0; it != invertedListAuthor.end(); ++it, ++i) {
+//        if (i == 0 || it->first != prev(it)->first) {
+//            f << it->first << " " << i << endl;
+//        }
+//
+//        if (it->first == next(it)->first) {
+//            LLFile << i << "|" << it->second << "|" << i + 1 << endl;
+//        } else {
+//            LLFile << i << "|" << it->second << "|" << -1 << endl;
+//        }
+//    }
+//    LLFile.close();
+//    f.close();
+//}
 
 
 void deleteAuthor(char* id) {
@@ -1196,9 +1444,6 @@ void deleteAuthor(char* id) {
 
 }
 
-
-
-
 void writeQuery() {
     cout << "Enter Query: ";
     cin.ignore(); // Clear any remaining characters in the input buffer
@@ -1214,25 +1459,20 @@ void writeQuery() {
     cout << "\n" <<tolowerQuery<<"\n";
 
     if (tolowerQuery.find("select all from authors where author id=") != string::npos) {
-        cout << "case 1\n";
+        cout << "case 1.\n";
         PrintAuthorByID();
     }
 
     else if (tolowerQuery.find("select all from books where author id=") != string::npos) {
-        cout << "case 2\n";
+        cout << "case 2.\n";
         char authorId[50];
-        cout << "Enter Author ID: ";
         cin >> authorId;
-        PrintBooksByAuthorID(SearchBookByAuthorId(authorId,0,author_no));
-
-        //        PrintBookByID(authorId);
-        ////        retriveBookRecord(SearchBookById(authorId, 0, book_no));
+        printBooksFromMap(authorId);
     }
 
     else if (tolowerQuery.find("select author name from authors where author id=")!=string::npos) {
-        cout << "case 3\n";
+        cout << "case 3.\n";
         char authorId[50];
-        cout << "Enter Author ID: ";
         cin >> authorId;
         if (SearchAuthorById(authorId, 0, author_no) != NULL)
         {
@@ -1242,7 +1482,6 @@ void writeQuery() {
         cout << "Author not found" << endl;
         return;
     }
-
     else {
         cout << "Invalid Query" << endl;
     }
@@ -1253,6 +1492,11 @@ int main()
 {
     Author_readRecNo();
     readRecNo();
+    string h ="-1";
+    fstream file;
+    file.open("Author_Header.txt",ios::out);
+    file<<h;
+    file.close();
 
     int choice;
     do
@@ -1295,12 +1539,12 @@ int main()
         }
         case 5:
         {
-                       deleteBook();
+            deleteBook();
             break;
         }
         case 6:
         {
-//                            deleteAuthor();
+        deleteAuthor();
             break;
         }
         case 7:
