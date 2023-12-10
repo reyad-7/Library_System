@@ -1789,10 +1789,13 @@ int main()
     Author_readRecNo();
     readRecNo();
     string h ="-1";
-    fstream file;
-    file.open("Author_Header.txt",ios::out);
-    file<<h;
-    file.close();
+    fstream a , b;
+    a.open("Author_Header.txt",ios::out);
+    a<<h;
+    a.close();
+    b.open("Book_Header.txt",ios::out);
+    b<<h;
+    b.close();
 
     int choice;
     do
