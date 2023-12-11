@@ -45,6 +45,11 @@ struct bookLinkedList
     char ind[50], bookID[30],next[30];
 } bookLinkedList[200],bookLinkedList_temp;
 
+struct AuthorLinkedList
+{
+    char ind[50],AuthorID[30],next[30];
+} authorLinkedList[200],authorLinkedList_temp;
+
 
 struct book_SecIndex
 {
@@ -385,22 +390,18 @@ void readBookSecIndex()
     secBook.close();
 }
 
-// Function to read the linked list file into the bookLinkedList structure
-////do not delete *it is needed
-//void readBookLinkedList()
-//{
-//    fstream linkedList;
-//    linkedList.open("linkedListBook.txt", ios::in);
-//
-//    for (int i = 0; i < 200 && !linkedList.eof(); i++)
-//    {
-//        linkedList.getline(bookLinkedList[i].ind, 50, '|');
-//        linkedList.getline(bookLinkedList[i].bookID, 30, '|');
-//        linkedList.getline(bookLinkedList[i].next, 30, '\n');
-//    }
-//
-//    linkedList.close();
-//}
+void readAuthorSecIndex()
+{
+    fstream secBook;
+    secBook.open("author_Secondary.txt", ios::in);
+
+    int i = 0;
+    while (i < 200 && secBook.getline(SIn[i].name, 50, '|') && secBook.getline(SIn[i].ind, 30, '\n'))
+    {
+        ++i;
+    }
+    secBook.close();
+}
 
 
 
@@ -425,6 +426,65 @@ char *SearchAuthorById(char *id, int low, int high)
     }
     return NULL;
 }
+
+
+// Function to read the linked list file into the authorLinkedList structure
+void readAuthorLinkedList()
+{
+    fstream linkedList;
+    linkedList.open("linkedListAuthor.txt", ios::in);
+
+    for (int i = 0; i < 200 && !linkedList.eof(); i++)
+    {
+        linkedList.getline(authorLinkedList[i].ind, 50, '|');
+        linkedList.getline(authorLinkedList[i].AuthorID, 30, '|');
+        linkedList.getline(authorLinkedList[i].next, 30, '\n');
+    }
+
+    linkedList.close();
+}
+
+
+// search in inverted list by the ind retreived from the secondary index and the author id that given by the user
+bool searchInInvertedlist (char *ind , char* authorId){
+    int x = atoi(ind);
+    while(true){
+        if (x==-1){
+            break;
+        }
+        char *tempAuthorId  = authorLinkedList[x].AuthorID;
+        char *tempAuthorNext  = authorLinkedList[x].next;
+        if (strcmp(authorId,tempAuthorId)==0){
+            return true;
+        }
+//        get next author id for the same name
+        else {
+            x= atoi(tempAuthorNext);
+        }
+    }
+    return false;
+}
+
+// search in the secondary index to get the name and index of this id if this id is already exist
+void searchInAuthorSecForName(char * id ){
+    readAuthorLinkedList();
+    readAuthorSecIndex();
+    if(SearchAuthorById(id,0,author_no)==NULL){
+        cout <<"author id not found  \n";
+        return;
+    }
+//    enter author secondary file to get this name with its ind in the inverted list
+    for (int i = 0; i < author_no; ++i) {
+        char* tempName = SIn[i].name;
+        char * tempInd= SIn[i].ind;
+        if (searchInInvertedlist (tempInd,id)){
+            cout <<"Name\n";
+            cout <<tempName<<"\n";
+            return;
+        }
+    }
+}
+
 
 char *SearchBookById(char *id, int low, int high)
 {
@@ -560,8 +620,6 @@ int AddBook()
 
     createBookSec(book);
 }
-
-
 
 
 void retriveAuthorRecord(char *offset)
@@ -835,17 +893,6 @@ void updateBookTitle()
     }
 }
 
-// void deleteAuthorFromDataFile(char* st_id)
-//{
-//     readAuthorHeader();
-//     int x =atoi(st_id);
-//     fstream ff;
-//     ff.open("Author_data.txt");
-//     ff.seekp(x, ios::beg);
-//     ff<<'*'<<authorHeader<<'|';
-//     ff.close();
-// }
-
 
 void PrintBookByID(char *ISBN)
 {
@@ -873,44 +920,6 @@ void PrintAuthorByID()
     cout << "Author not found" << endl;
     return;
 }
-
-
-//// Function to print all books for a given author ID from the inverted list
-//void PrintBooksByAuthorID(const char* ind) {
-//    fstream linkedListFile;
-//    readBookLinkedList();
-//
-//    linkedListFile.open("linkedListBook.txt", ios::in);
-//
-//    if (ind ==NULL){
-//        cout << "author id not found in the secondary index \n";
-//        return;
-//    }
-//    else{
-//        while (!linkedListFile.eof()) {
-//            linkedListFile.getline(bookLinkedList_temp.ind, 10, '|');
-//            linkedListFile.getline(bookLinkedList_temp.bookID, 30, '|');
-//            linkedListFile.getline(bookLinkedList_temp.next, 30, '\n');
-//
-//            if (strcmp(bookLinkedList_temp.ind, ind) == 0) {
-//                // Call the function to print the book details
-//                cout <<"teeeeeest";
-//                cout << bookLinkedList_temp.bookID<<"\n";
-//
-////                if (strcmp(bookLinkedList_temp.next, "-1") != 0) {
-////                    // Continue printing the remaining books for this author ID
-////                    auto tempInd =  bookLinkedList_temp.next;
-////
-////                    PrintBookByID(bookLinkedList_temp.next);
-////                    // print the id of this ind
-////                }
-//                return;
-//            }
-//        }
-//
-//    }
-//    linkedListFile.close();
-//}
 
 
 // Function to loop through the inverted list for books that contain the author ID and print the books
@@ -1770,13 +1779,8 @@ void writeQuery() {
         cout << "case 3.\n";
         char authorId[50];
         cin >> authorId;
-        if (SearchAuthorById(authorId, 0, author_no) != NULL)
-        {
-            retriveAuthorName(SearchAuthorById(authorId, 0, author_no));
-            return;
-        }
-        cout << "Author not found" << endl;
-        return;
+
+        searchInAuthorSecForName(authorId);
     }
     else {
         cout << "Invalid Query" << endl;
