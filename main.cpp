@@ -175,7 +175,7 @@ void createBookPriIndex()
         file1.getline(bookSiz, 5, '|');
         file1.getline(ISBN, 30, '|');
         file1.getline(bookTitle, 50, '|');
-        file1.getline(Author_ID, 50, '\n');
+        file1.getline(Author_ID, 50, '|');
 
         // Convert current to string and
         // store in bookCursor
@@ -532,7 +532,7 @@ int AddAuthor()
     A.authorSiz += strlen(A.author_Name);
     A.authorSiz += strlen(A.author_id);
     A.authorSiz += strlen(A.author_Address);
-    A.authorSiz += 5;
+    A.authorSiz += 4;
     char s[5];
     //    converts the integer A.authorSiz to a string and stores it in character s.
     itoa(A.authorSiz, s, 10);
@@ -541,8 +541,7 @@ int AddAuthor()
     A.authorSiz += strlen(s);
 
     Record.open("Author_data.txt", ios::app | ios::out);
-    Record << A.authorSiz << "|" << A.author_Name << "|" << A.author_id << "|" << A.author_Address << "|"
-           << "\n";
+    Record << A.authorSiz << "|" << A.author_Name << "|" << A.author_id << "|" << A.author_Address << "|" ;
     Record.close();
 
     // Read the current number of authors
@@ -600,7 +599,7 @@ int AddBook()
     book.bookSiz += strlen(s);
 
     recordFile.open("book_data.txt", ios::app | ios::out);
-    recordFile << book.bookSiz << "|" << book.ISBN << "|" << book.bookTitle << "|" << book.Author_ID << "\n";
+    recordFile << book.bookSiz << "|" << book.ISBN << "|" << book.bookTitle << "|" << book.Author_ID << "|";
     recordFile.close();
 
     // Read the current number of authors
@@ -635,8 +634,7 @@ void retriveAuthorRecord(char *offset)
 
     cout << '\n'
          << "Name   ID    Address   " << endl;
-    cout << author_Name << "    " << author_id << "    " << author_Address << '\n'
-         << endl;
+    cout << author_Name << "    " << author_id << "    " << author_Address << '\n'<< endl;
     ff.close();
 }
 
@@ -686,7 +684,7 @@ void retriveBookRecord(char *ind)
     ff.getline(ind, 10, '|');
     ff.getline(ISBN, 30, '|');
     ff.getline(bookTitle, 50, '|');
-    ff.getline(Author_ID, 50, '\n');
+    ff.getline(Author_ID, 50, '|');
 
     cout << '\n'
          << "ID    book Title    author_id" << endl;
