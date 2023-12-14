@@ -781,7 +781,7 @@ void updateAuthorName()
     while (inputFile.getline(author_Name, 50, '|'))
     {
         inputFile.getline(author_id, 13, '|');
-        inputFile.getline(author_Address, 50, '\n');
+        inputFile.getline(author_Address, 50, '|');
 
         // Check if the author ID matches
         if (strcmp(author_id, authorU) == 0)
@@ -789,8 +789,8 @@ void updateAuthorName()
             // Display the existing record
             cout << "Existing Record:\n";
             cout << "Name   ID    Address" << endl;
-            cout << author_Name << "    " << author_id << "    " << author_Address << '\n'
-                 << endl;
+            cout << author_Name << "    " << author_id << "    " << author_Address << '\n';
+            //     << endl;
 
             // Get the new author name
             cout << "Enter the new author name: ";
@@ -800,7 +800,7 @@ void updateAuthorName()
             int updatedSize = strlen(authorSiz) + strlen(author_Name) + strlen(author_id) + strlen(author_Address) + 3;
 
             // Write the updated record to the temporary file
-            tempFile << updatedSize << "|" << author_Name << "|" << author_id << "|" << author_Address << "\n";
+            tempFile << updatedSize << "|" << author_Name << "|" << author_id << "|" << author_Address << "|";
 
             // Set the flag to indicate that the record is found and updated
             Found = true;
@@ -810,7 +810,7 @@ void updateAuthorName()
         else
         {
             // Write the unchanged record to the temporary file
-            tempFile << authorSiz << "|" << author_Name << "|" << author_id << "|" << author_Address << "\n";
+            tempFile << authorSiz << "|" << author_Name << "|" << author_id << "|" << author_Address << "|";
         }
 
         // Read the next record size
@@ -880,7 +880,7 @@ void updateBookTitle()
     while (inputFile.getline(ISBN, 30, '|'))
     {
         inputFile.getline(bookTitle, 50, '|');
-        inputFile.getline(Author_ID, 50, '\n');
+        inputFile.getline(Author_ID, 50, '|');
 
         // Check if the ISBN matches
         if (strcmp(ISBN, ISBNU) == 0)
@@ -888,8 +888,8 @@ void updateBookTitle()
             // Display the existing record
             cout << "Existing Record:\n";
             cout << "ID    book Title    author_id" << endl;
-            cout << ISBN << "    " << bookTitle << "    " << Author_ID << '\n'
-                 << endl;
+            cout << ISBN << "    " << bookTitle << "    " << Author_ID << '\n';
+            //  << endl;
 
             // Get the new book title
             cout << "Enter the new book title: ";
@@ -899,7 +899,7 @@ void updateBookTitle()
             int updatedSize = strlen(bookSiz) + strlen(ISBN) + strlen(bookTitle) + strlen(Author_ID) + 3;
 
             // Write the updated record to the temporary file
-            tempFile << updatedSize << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "\n";
+            tempFile << updatedSize << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "|";
 
             // Set the flag to indicate that the record is found and updated
             Found = true;
@@ -909,7 +909,7 @@ void updateBookTitle()
         else
         {
             // Write the unchanged record to the temporary file
-            tempFile << bookSiz << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "\n";
+            tempFile << bookSiz << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "|";
         }
 
         // Read the next record size
