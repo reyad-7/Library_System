@@ -10,7 +10,7 @@ int header = -1, authorHeader = -1;
 
 multimap<string, string> invertedListAuthor;
 multimap<string, string> invertedListBook;
-multimap<int, int> avail;
+multimap<int, int> availAuthor;
 
 // Structures to define the record formats
 struct Author
@@ -563,23 +563,55 @@ int AddAuthor()
     //    Update A.authorSiz by adding the length of the string representation of the original size.
     A.authorSiz += strlen(s);
 
-    auto lastItem = avail.rbegin();
-    if (!avail.empty() && A.authorSiz <= lastItem->first)
+    // get the last item(biggest) from the list
+    auto lastItem = availAuthor.rbegin();
+
+    if (!availAuthor.empty() && A.authorSiz <= lastItem->first)
     {
-        auto it = avail.lower_bound(A.authorSiz);
+        // get the first match size
+        auto it = availAuthor.lower_bound(A.authorSiz);
+        // offset
+        int writePos = it->second;
+
         Record.open("Author_data.txt", ios::in | ios::out);
-        Record.seekp(it->second);
+
+        //        if (avail.size() > 2) {
+        //            Record.seekg(it->second);
+        //            int actualOffset = it->second; //38
+        //            char firstChar;
+        //            Record.get(firstChar); // Read and ignore the first character
+        //
+        //            string previousOffset;
+        //            getline(Record, previousOffset, '|'); // Read until the next '|' delimiter
+        //            cout << "pre " << previousOffset << endl;
+        //
+        //
+        //            string searchString = to_string(actualOffset); // Construct search string
+        //            Record.seekg(0);
+        //            char ch;
+        //
+        //            while (Record.get(ch)) {
+        //                if (ch == '*') {
+        //                    // Read the following characters to verify if it's the desired string
+        //                    string temp;
+        //                    getline(Record, temp, '|'); // Read until the next '|' delimiter
+        //
+        //                    if (temp == searchString) { // Replace searchString with your desired string to find
+        //                        Record.seekp(-2,ios::cur);
+        //                        Record  << previousOffset <<"|";
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //        }
+        // write in the correct position
+        Record.seekp(writePos, ios::beg);
+
         Record << A.authorSiz << "|" << A.author_Name << "|" << A.author_id << "|" << A.author_Address << "|";
-        avail.erase(it);
         Record.close();
 
-        //        for (auto itr = next(it); itr != avail.end(); ++itr) {
-        //            // Calculate new offset
-        //            int newOffset = A.authorSiz + itr->second - itr->first;
-        //            avail.erase(itr);
-        //            // Insert new entry
-        //            avail.insert(make_pair(itr->first, newOffset));
-        //        }
+        // delete from the list
+        availAuthor.erase(it);
     }
     else
     {
@@ -1061,42 +1093,56 @@ void deleteAuthorName(char name[], char id[])
 void deleteAuthor()
 {
     char id[13];
-    char name[20];
     cout << "Enter Author ID: ";
     cin >> id;
-    cout << "Enter Author Name: ";
-    cin >> name;
+
     char *offset = SearchAuthorById(id, 0, author_no);
-
-    fstream file("Author_data.txt", ios::in | ios::out);
-
-    if (!file.is_open())
+    if (offset != NULL)
     {
-        cout << "Error opening file!" << endl;
-        return;
+        fstream file("Author_data.txt", ios::in | ios::out);
+
+        file.seekg(stoi(offset), ios::beg);
+        file.getline(authorSiz, 10, '|');
+        file.getline(author_Name, 50, '|');
+        file.getline(author_id, 13, '|');
+        file.getline(author_Address, 50, '|');
+
+        if (!file.is_open())
+        {
+            cout << "Error opening file!" << endl;
+            return;
+        }
+
+        // store current header in authorHeader variable
+        readAuthorHeader();
+        file.seekg(0);
+
+        // seek to the correct position to write in it
+        file.seekp(stoi(offset), ios::beg);
+        file << "*" << authorHeader << "|" << authorSiz << "|";
+
+        // header
+        string h = to_string(authorHeader);
+        // fill the remaining with spaces
+        //  5 --> *, |, |, authorSiz(two digits)
+        int remainingSpace = stoi(authorSiz) - (h.length() + 5);
+        for (int i = 0; i < remainingSpace; i++)
+        {
+            file << " ";
+        }
+        cout << "The author deleted successfully\n";
+
+        availAuthor.insert(make_pair(stoi(authorSiz), stoi(offset)));
+        // update the header
+        authorHeader = stoi(offset);
+        writeAuthorHeader(authorHeader);
+        // delete from P_index
+        deleteAuthorFromPriIndex(id);
+        // delete form S_index
+        deleteAuthorName(author_Name, id);
     }
-    file.seekg(stoi(offset), ios::beg);
-    // To store two characters and a null terminator
-    char AuthorSize[3];
-    file.read(AuthorSize, 2);
-    AuthorSize[2] = '\0';
-    readAuthorHeader();
-    file.seekg(0);
-    file.seekp(stoi(offset), ios::beg);
-
-    file << "*" << authorHeader << "|" << AuthorSize << "|";
-
-    int remainingSpace = stoi(AuthorSize) - 7;
-    for (int i = 0; i < remainingSpace; i++)
-    {
-        file << " ";
-    }
-
-    avail.insert(make_pair(stoi(AuthorSize), stoi(offset)));
-    authorHeader = stoi(offset);
-    writeAuthorHeader(authorHeader);
-    deleteAuthorFromPriIndex(id);
-    deleteAuthorName(name, id);
+    else
+        cout << "Author doesn't exist!\n";
 }
 
 void deleteIsbn(char isbn[])
@@ -1319,14 +1365,6 @@ int main()
 {
     Author_readRecNo();
     readRecNo();
-    //    string h ="-1";
-    //    fstream a , b;
-    //    a.open("Author_Header.txt",ios::out);
-    //    a<<h;
-    //    a.close();
-    //    b.open("Book_Header.txt",ios::out);
-    //    b<<h;
-    //    b.close();
 
     int choice;
     do
