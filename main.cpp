@@ -11,6 +11,7 @@ int header = -1, authorHeader = -1;
 multimap<string, string> invertedListAuthor;
 multimap<string, string> invertedListBook;
 multimap<int, int> availAuthor;
+multimap<int, int> availBook;
 
 // Structures to define the record formats
 struct Author
@@ -61,6 +62,7 @@ struct authorSecIndex
     char name[50], ind[30];
 } SIn[100], stemp;
 
+// for book header
 void readHeader()
 {
     fstream HFile;
@@ -77,6 +79,7 @@ void writeHeader(int header)
     HFile.close();
 }
 
+// for author header
 void readAuthorHeader()
 {
     fstream HFile;
@@ -186,31 +189,52 @@ void createBookPriIndex()
 {
     // Initialize a variable to keep track of the current offset in the data file
     int current = 0;
-    fstream file1;
-    file1.open("book_data.txt", ios::in);
+    fstream file;
+    file.open("book_data.txt", ios::in);
 
-    // Iterate through each author record
+    // Iterate through each book record
     for (int i = 0; i < book_no; i++)
     {
-        file1.getline(bookSiz, 5, '|');
-        file1.getline(ISBN, 30, '|');
-        file1.getline(bookTitle, 50, '|');
-        file1.getline(Author_ID, 50, '|');
+        file.getline(bookSiz, 5, '|');
+        file.getline(ISBN, 30, '|');
+        file.getline(bookTitle, 50, '|');
+        file.getline(Author_ID, 50, '|');
 
-        // Convert current to string and
-        // store in bookCursor
-        itoa(current, bookCursor, 10);
+        // Check if bookSiz starts with '*'
+        if (bookSiz[0] == '*')
+        {
+            // Extract the size after '*-1|'
+            int startPos = 0;
+            while (bookSiz[startPos] != '|')
+            {
+                startPos++;
+            }
+            startPos++; // Move past the '|'
 
-        // Store author ID and offset in in(primary index ) array
-        strcpy_s(in[i].id, ISBN);
-        strcpy_s(in[i].ind, bookCursor);
+            // Store the actual size in authorSiz
+            strcpy_s(bookSiz, bookSiz + startPos);
 
-        // Update current for the next record
-        current += atoi(bookSiz);
+            // Parse the actual size as an integer
+            int parsedSize = atoi(bookSiz);
+
+            // Update the current offset for the next record
+            current += parsedSize;
+        }
+        else
+        {
+            // Convert current to string and store in bookCursor
+            sprintf(bookCursor, "%d", current);
+
+            // Store book ISBN and pointer in(Primary index) array
+            strcpy_s(in[i].id, ISBN);
+            strcpy_s(in[i].ind, bookCursor);
+
+            // Update the current offset for the next record
+            current += atoi(bookSiz);
+        }
     }
 
-    // Close the file
-    file1.close();
+    file.close();
 }
 
 void readAuthorPriIndex()
@@ -328,7 +352,7 @@ void createAuthorSec(Author A)
         // if it is the first occurrence or the author name is different from the previous one
         if (i == 0 || pair1.first != pair2.first)
         {
-            secAuthor << pair1.first << "|" << i << "|" << endl;
+            secAuthor << pair1.first << "|" << i << endl;
         }
 
         // Write the position and author ID to the linked list file and make its pointer -1 if it is the first record for that name
@@ -373,7 +397,7 @@ void createBookSec(Book B)
         // if it is the first occurrence or the author ID is different from the previous one
         if (i == 0 || pair1.first != pair2.first)
         {
-            secBook << pair1.first << "|" << i << "|" << endl;
+            secBook << pair1.first << "|" << i << endl;
         }
 
         // Write the position and book ID to the linked list file
@@ -575,35 +599,6 @@ int AddAuthor()
 
         Record.open("Author_data.txt", ios::in | ios::out);
 
-        //        if (avail.size() > 2) {
-        //            Record.seekg(it->second);
-        //            int actualOffset = it->second; //38
-        //            char firstChar;
-        //            Record.get(firstChar); // Read and ignore the first character
-        //
-        //            string previousOffset;
-        //            getline(Record, previousOffset, '|'); // Read until the next '|' delimiter
-        //            cout << "pre " << previousOffset << endl;
-        //
-        //
-        //            string searchString = to_string(actualOffset); // Construct search string
-        //            Record.seekg(0);
-        //            char ch;
-        //
-        //            while (Record.get(ch)) {
-        //                if (ch == '*') {
-        //                    // Read the following characters to verify if it's the desired string
-        //                    string temp;
-        //                    getline(Record, temp, '|'); // Read until the next '|' delimiter
-        //
-        //                    if (temp == searchString) { // Replace searchString with your desired string to find
-        //                        Record.seekp(-2,ios::cur);
-        //                        Record  << previousOffset <<"|";
-        //                        break;
-        //                    }
-        //                }
-        //            }
-        //        }
         // write in the correct position
         Record.seekp(writePos, ios::beg);
 
@@ -673,10 +668,33 @@ int AddBook()
     char s[5];
     itoa(book.bookSiz, s, 10);
     book.bookSiz += strlen(s);
+    // get the last item(biggest) from the list
+    auto lastItem = availBook.rbegin();
 
-    recordFile.open("book_data.txt", ios::app | ios::out);
-    recordFile << book.bookSiz << "|" << book.ISBN << "|" << book.bookTitle << "|" << book.Author_ID << "|";
-    recordFile.close();
+    if (!availBook.empty() && book.bookSiz <= lastItem->first)
+    {
+        // get the first match size
+        auto it = availBook.lower_bound(book.bookSiz);
+        // offset
+        int writePos = it->second;
+
+        recordFile.open("book_data.txt", ios::in | ios::out);
+
+        // write in the correct position
+        recordFile.seekp(writePos, ios::beg);
+
+        recordFile << book.bookSiz << "|" << book.ISBN << "|" << book.bookTitle << "|" << book.Author_ID << "|";
+        recordFile.close();
+
+        // delete from the list
+        availBook.erase(it);
+    }
+    else
+    {
+        recordFile.open("book_data.txt", ios::app | ios::out);
+        recordFile << book.bookSiz << "|" << book.ISBN << "|" << book.bookTitle << "|" << book.Author_ID << "|";
+        recordFile.close();
+    }
 
     // Read the current number of authors
     readRecNo();
@@ -1222,98 +1240,59 @@ void deleteBookFromPriIndex(char *id)
     }
 }
 
-void deleteBookFromDataFile(char ISBN[30])
-{
-    string h;
-    char *offset = SearchBookById(ISBN, 0, book_no);
-
-    ifstream inputFile("book_data.txt");
-    if (!inputFile.is_open())
-    {
-        cout << "Error opening file!" << endl;
-        return;
-    }
-    ofstream tempFile("temp_Book_data.txt");
-
-    if (!tempFile.is_open())
-    {
-        cout << "Error creating temporary file!" << endl;
-        inputFile.close();
-        return;
-    }
-    char bookSiz[5], bookISBN[30], bookTitle[50], Author_ID[50];
-
-    bool Found = false;
-
-    inputFile.getline(bookSiz, 5, '|');
-    while (inputFile.getline(bookISBN, 30, '|'))
-    {
-        inputFile.getline(bookTitle, 50, '|');
-        inputFile.getline(Author_ID, 50, '\n');
-
-        if (strcmp(bookISBN, ISBN) == 0)
-        {
-            int updatedSize = strlen(bookSiz) + strlen(bookISBN) + strlen(bookTitle) + strlen(Author_ID) + 3;
-
-            ifstream f;
-            f.open("Book_Header.txt", ios::in | ios::out);
-            f >> h;
-            f.close();
-            tempFile << "*" << h << "|" << updatedSize << "|";
-            int remainingSpace = updatedSize -
-                                 (strlen(bookSiz) + strlen(bookISBN) + strlen(bookTitle) + strlen(Author_ID) +
-                                  3);
-            for (int i = 0; i < remainingSpace; ++i)
-            {
-                tempFile << " ";
-            }
-            h = offset;
-            ofstream f1;
-            f1.open("Book_Header.txt", ios::trunc);
-            f1.seekp(0, ios::beg);
-            f1 << h;
-            f1.close();
-            tempFile << "\n";
-
-            Found = true;
-
-            cout << "Book deleted successfully!" << endl;
-        }
-        else
-        {
-            tempFile << bookSiz << "|" << bookISBN << "|" << bookTitle << "|" << Author_ID << "\n";
-        }
-        inputFile.getline(bookSiz, 5, '|');
-    }
-    if (!Found)
-    {
-        cout << "Book not found." << endl;
-    }
-
-    inputFile.close();
-    tempFile.close();
-
-    if (remove("Book_data.txt") != 0)
-    {
-        cout << "Error deleting!" << endl;
-        return;
-    }
-
-    if (rename("temp_Book_data.txt", "book_data.txt") != 0)
-    {
-        cout << "Error renaming temporary file!" << endl;
-        return;
-    }
-}
-
 void deleteBook()
 {
-    char ISBN[30];
-    cout << "Enter the Book ISBN: ";
-    cin >> ISBN;
-    deleteBookFromDataFile(ISBN);
-    deleteIsbn(ISBN);
-    deleteBookFromPriIndex(ISBN);
+    char isbn[13];
+    cout << "Enter Book ISBN: ";
+    cin >> isbn;
+
+    char *offset = SearchBookById(isbn, 0, book_no);
+    if (offset != NULL)
+    {
+        fstream file("book_data.txt", ios::in | ios::out);
+
+        file.seekg(stoi(offset), ios::beg);
+        file.getline(bookSiz, 5, '|');
+        file.getline(ISBN, 30, '|');
+        file.getline(bookTitle, 50, '|');
+        file.getline(Author_ID, 50, '|');
+
+        if (!file.is_open())
+        {
+            cout << "Error opening file!" << endl;
+            return;
+        }
+
+        // store current book header in header variable
+        readHeader();
+        file.seekg(0);
+
+        // seek to the correct position to write in it
+        file.seekp(stoi(offset), ios::beg);
+        file << "*" << header << "|" << bookSiz << "|";
+
+        // header
+        string h = to_string(header);
+        // fill the remaining with spaces
+        //  5 --> *, |, |, bookSiz(two digits)
+        int remainingSpace = stoi(bookSiz) - (h.length() + 5);
+        for (int i = 0; i < remainingSpace; i++)
+        {
+            file << " ";
+        }
+        cout << "The book deleted successfully\n";
+
+        availBook.insert(make_pair(stoi(bookSiz), stoi(offset)));
+        // update the header
+        header = stoi(offset);
+        writeHeader(header);
+        // delete from P_index
+        deleteBookFromPriIndex(isbn);
+        // delete form S_index
+        deleteIsbn(isbn);
+    }
+    else
+        cout << "book doesn't exist!\n";
 }
 
 void writeQuery()
