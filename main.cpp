@@ -500,7 +500,7 @@ bool searchInInvertedlist(char *ind, char *authorId)
         {
             return true;
         }
-        //        get next author id for the same name
+            //        get next author id for the same name
         else
         {
             x = atoi(tempAuthorNext);
@@ -990,94 +990,62 @@ void updateBookTitle()
     }
 }
 
-void PrintBookByID(char *ISBN)
-{
-    readBookPriIndex();
-    if (SearchBookById(ISBN, 0, book_no) != NULL)
-    {
-        retriveBookRecord(SearchBookById(ISBN, 0, author_no));
-        return;
-    }
-    cout << "Book not found" << endl;
-    return;
-}
-
-void PrintAuthorByID()
-{
-    readAuthorPriIndex();
-    cout << "Enter the id: ";
-    cin >> Author_ID;
-    if (SearchAuthorById(Author_ID, 0, author_no) != NULL)
-    {
-        retriveAuthorRecord(SearchAuthorById(Author_ID, 0, author_no));
-        return;
-    }
-    cout << "Author not found" << endl;
-    return;
-}
-
-// Function to loop through the inverted list for books that contain the author ID and print the books
-void printBooksFromMap(char *authorId)
-{
-    // Check if the authorId exists in the secondary index
-    char *authorIdCheck = SearchInBookSecByAuthorId(authorId, 0, author_no);
-
-    if (authorIdCheck != nullptr)
-    {
-        cout << "Author ID already exists.\n";
-        // Retrieve books associated with the author ID from the inverted list
-        auto range = invertedListBook.equal_range(authorIdCheck);
-        if (range.first != invertedListBook.end())
-        {
-            cout << "Books by Author ID " << authorIdCheck << ":\n";
-            for (auto it = range.first; it != range.second; ++it)
-            {
-                //                 Print each book ID (ISBN)
-                cout << "Book ID: " << it->second << endl;
-                //                PrintBookByID(it->second);
-                //                Add a function call to print book details using ISBN (it->second)
-            }
-        }
-        else
-        {
-            cout << "No books found for Author ID " << authorIdCheck << ".\n";
-        }
-    }
-    else
-    {
-        cout << "Author ID not found in secondary index.\n";
-    }
-}
-
 void deleteAuthorFromPriIndex(char *id)
 {
     Author_readRecNo();
     readAuthorPriIndex();
-    for (int i = 0; i < author_no; i++)
+    int low = 0;
+    int high = author_no - 1;
+    int mid, foundIndex = -1;
+
+    while (low <= high)
     {
-        if (strcmp(Author_in[i].ID, id) == 0)
+        mid = (low + high) / 2;
+        if (strcmp(Author_in[mid].ID, id) == 0)
         {
-            int h = atoi(Author_in[i].offset);
-            writeAuthorHeader(h);
-            author_no--;
-            for (int j = i; j < author_no; j++)
-            {
-                strcpy(Author_in[j].ID, Author_in[j + 1].ID);
-                strcpy(Author_in[j].offset, Author_in[j + 1].offset);
-            }
+            foundIndex = mid;
+            break;
+        }
+        else if (strcmp(Author_in[mid].ID, id) < 0)
+        {
+            low = mid + 1;
+        }
+        else
+        {
+            high = mid - 1;
         }
     }
-    Author_writeRecNo();
-    writeAuthorPriIndex();
+
+    if (foundIndex != -1)
+    {
+        int h = atoi(Author_in[foundIndex].offset);
+        writeAuthorHeader(h);
+
+        for (int j = foundIndex; j < author_no - 1; j++)
+        {
+            strcpy(Author_in[j].ID, Author_in[j + 1].ID);
+            strcpy(Author_in[j].offset, Author_in[j + 1].offset);
+        }
+
+        author_no--;
+        Author_writeRecNo();
+        writeAuthorPriIndex();
+    }
+    else
+    {
+        cout << "Author not found" << endl;
+    }
 }
 
 void deleteAuthorName(char name[], char id[])
 {
+    // Find the range of elements with the specified author name in the inverted list
     auto range = invertedListAuthor.equal_range(name);
     for (auto it = range.first; it != range.second; ++it)
     {
+        // first-> author_Name , second-> author_id
         if (it->second == id)
-        {
+        {// Check if the current element has the specified ID
             invertedListAuthor.erase(it);
             break;
         }
@@ -1090,17 +1058,19 @@ void deleteAuthorName(char name[], char id[])
 
     for (int i = 0; it != invertedListAuthor.end(); ++it, ++i)
     {
-        if (i == 0 || it->first != prev(it)->first)
-        {
+        // Write the updated inverted list in secondary file
+        if (i == 0 || it->first != prev(it)->first){
+            // If the current iteration is the first one or If the prev element has a different author name
             f << it->first << "|" << i << endl;
         }
 
-        if (it->first == next(it)->first)
-        {
+        // Write the updated inverted list in linked list file
+        if (it->first == next(it)->first){
+            // If the next element has the same author name, point to it
             LLFile << i << "|" << it->second << "|" << i + 1 << endl;
         }
-        else
-        {
+        else{
+            // If the next element has a different author name, -1 as no next index
             LLFile << i << "|" << it->second << "|" << -1 << endl;
         }
     }
@@ -1168,8 +1138,10 @@ void deleteIsbn(char isbn[])
     auto i = invertedListBook.begin();
     while (i != invertedListBook.end())
     {
+        //first->Author_ID , second->ISBN
+
         if (i->second == isbn)
-        {
+        {// Check if the current element has the specified ISBN
             i = invertedListBook.erase(i);
         }
         else
@@ -1181,12 +1153,15 @@ void deleteIsbn(char isbn[])
 
     for (int i = 0; it != invertedListBook.end(); ++it, ++i)
     {
+        // Write the updated inverted list in linked list file
         if (it->first == next(it)->first)
-        { // if author id have many books
+        {
+            //If the next book has the same Author_ID (author has many books), point to it
             LLFile << i << "|" << it->second << "|" << i + 1 << endl;
         }
         else
         {
+            // If the next element has a different Author_ID, -1 as no next index
             LLFile << i << "|" << it->second << "|" << -1 << endl;
         }
     }
@@ -1295,6 +1270,66 @@ void deleteBook()
         cout << "book doesn't exist!\n";
 }
 
+
+void PrintBookByID(char *ISBN)
+{
+    readBookPriIndex();
+    if (SearchBookById(ISBN, 0, book_no) != NULL)
+    {
+        retriveBookRecord(SearchBookById(ISBN, 0, author_no));
+        return;
+    }
+    cout << "Book not found" << endl;
+    return;
+}
+
+void PrintAuthorByID()
+{
+    readAuthorPriIndex();
+    cout << "Enter the id: ";
+    cin >> Author_ID;
+    if (SearchAuthorById(Author_ID, 0, author_no) != NULL)
+    {
+        retriveAuthorRecord(SearchAuthorById(Author_ID, 0, author_no));
+        return;
+    }
+    cout << "Author not found" << endl;
+    return;
+}
+
+// Function to loop through the inverted list for books that contain the author ID and print the books
+void printBooksFromMap(char *authorId)
+{
+    // Check if the authorId exists in the secondary index
+    char *authorIdCheck = SearchInBookSecByAuthorId(authorId, 0, author_no);
+
+    if (authorIdCheck != nullptr)
+    {
+        cout << "Author ID already exists.\n";
+        // Retrieve books associated with the author ID from the inverted list
+        auto range = invertedListBook.equal_range(authorIdCheck);
+        if (range.first != invertedListBook.end())
+        {
+            cout << "Books by Author ID " << authorIdCheck << ":\n";
+            for (auto it = range.first; it != range.second; ++it)
+            {
+                //                 Print each book ID (ISBN)
+                cout << "Book ID: " << it->second << endl;
+                //                PrintBookByID(it->second);
+                //                Add a function call to print book details using ISBN (it->second)
+            }
+        }
+        else
+        {
+            cout << "No books found for Author ID " << authorIdCheck << ".\n";
+        }
+    }
+    else
+    {
+        cout << "Author ID not found in secondary index.\n";
+    }
+}
+
 void writeQuery()
 {
     cout << "Enter Query: ";
@@ -1364,54 +1399,54 @@ int main()
 
         switch (choice)
         {
-        case 1:
-        {
-            AddAuthor();
-            break;
-        }
-        case 2:
-        {
-            AddBook();
-            break;
-        }
-        case 3:
-        {
-            updateAuthorName();
-            break;
-        }
-        case 4:
-        {
-            updateBookTitle();
-            break;
-        }
-        case 5:
-        {
-            deleteBook();
-            break;
-        }
-        case 6:
-        {
-            deleteAuthor();
-            break;
-        }
-        case 7:
-        {
-            PrintAuthorByID();
-            break;
-        }
-        case 8:
-        {
-            char id[12];
-            cout << "enter id : ";
-            cin >> id;
-            PrintBookByID(id);
-            break;
-        }
-        case 9:
-        {
-            writeQuery();
-            break;
-        }
+            case 1:
+            {
+                AddAuthor();
+                break;
+            }
+            case 2:
+            {
+                AddBook();
+                break;
+            }
+            case 3:
+            {
+                updateAuthorName();
+                break;
+            }
+            case 4:
+            {
+                updateBookTitle();
+                break;
+            }
+            case 5:
+            {
+                deleteBook();
+                break;
+            }
+            case 6:
+            {
+                deleteAuthor();
+                break;
+            }
+            case 7:
+            {
+                PrintAuthorByID();
+                break;
+            }
+            case 8:
+            {
+                char id[12];
+                cout << "enter id : ";
+                cin >> id;
+                PrintBookByID(id);
+                break;
+            }
+            case 9:
+            {
+                writeQuery();
+                break;
+            }
         }
     } while (choice != 10);
 
