@@ -41,26 +41,21 @@ struct bookPriIndex
     char id[30], ind[10];
 } in[200], temp;
 
-// Structures to define secondary indices
-struct bookLinkedList
-{
-    char ind[50], bookID[30], next[30];
-} bookLinkedList[200], bookLinkedList_temp;
 
 struct AuthorLinkedList
 {
     char ind[50], AuthorID[30], next[30];
-} authorLinkedList[200], authorLinkedList_temp;
+} authorLinkedList[200];
 
 struct book_SecIndex
 {
     char authorId[50], ind[30];
-} book_SIn[200], B_Stemp;
+} book_SIn[200];
 
 struct authorSecIndex
 {
     char name[50], ind[30];
-} SIn[100], stemp;
+} SIn[100];
 
 // for book header
 void readHeader()
@@ -148,30 +143,7 @@ void createAuthorPriIndex()
         file.getline(author_id, 13, '|');
         file.getline(author_Address, 50, '|');
 
-        // Check if AuthorSiz starts with '*'
-        if (authorSiz[0] == '*')
-        {
-            // Extract the size after '*-1|'
-            int startPos = 0;
-            while (authorSiz[startPos] != '|')
-            {
-                startPos++;
-            }
-            startPos++; // Move past the '|'
-
-            // Store the actual size in authorSiz
-            strcpy_s(authorSiz, authorSiz + startPos);
-
-            // Parse the actual size as an integer
-            int parsedSize = atoi(authorSiz);
-
-            // Update the current offset for the next record
-            current += parsedSize;
-        }
-        else
-        {
-            // Convert current to string and store in authorCursor
-            sprintf(authorCursor, "%d", current);
+            itoa(current, authorCursor, 10);
 
             // Store author ID and offset in Author_in(Primary index) array
             strcpy_s(Author_in[i].ID, author_id);
@@ -179,7 +151,6 @@ void createAuthorPriIndex()
 
             // Update the current offset for the next record
             current += atoi(authorSiz);
-        }
     }
 
     file.close();
@@ -200,38 +171,14 @@ void createBookPriIndex()
         file.getline(bookTitle, 50, '|');
         file.getline(Author_ID, 50, '|');
 
-        // Check if bookSiz starts with '*'
-        if (bookSiz[0] == '*')
-        {
-            // Extract the size after '*-1|'
-            int startPos = 0;
-            while (bookSiz[startPos] != '|')
-            {
-                startPos++;
-            }
-            startPos++; // Move past the '|'
-
-            // Store the actual size in authorSiz
-            strcpy_s(bookSiz, bookSiz + startPos);
-
-            // Parse the actual size as an integer
-            int parsedSize = atoi(bookSiz);
-
-            // Update the current offset for the next record
-            current += parsedSize;
-        }
-        else
-        {
             // Convert current to string and store in bookCursor
-            sprintf(bookCursor, "%d", current);
-
+            itoa(current, bookCursor, 10);
             // Store book ISBN and pointer in(Primary index) array
             strcpy_s(in[i].id, ISBN);
             strcpy_s(in[i].ind, bookCursor);
 
             // Update the current offset for the next record
             current += atoi(bookSiz);
-        }
     }
 
     file.close();
@@ -344,7 +291,9 @@ void createAuthorSec(Author A)
     for (int i = 0; i < invertedListAuthor.size(); i++)
     {
         // Retrieve the current, previous, and next pairs in the inverted list
+//        current
         const auto &pair1 = *next(invertedListAuthor.begin(), i);
+//        previous sin secondery
         const auto &pair2 = *next(invertedListAuthor.begin(), i - 1);
         const auto &pair3 = *next(invertedListAuthor.begin(), i + 1);
 
@@ -435,16 +384,34 @@ void readBookSecIndex()
 
 void readAuthorSecIndex()
 {
-    fstream secBook;
-    secBook.open("author_Secondary.txt", ios::in);
+    fstream secAuthor;
+    secAuthor.open("author_Secondary.txt", ios::in);
 
     int i = 0;
-    while (i < 200 && secBook.getline(SIn[i].name, 50, '|') && secBook.getline(SIn[i].ind, 30, '\n'))
+    while (i < 200 && secAuthor.getline(SIn[i].name, 50, '|') && secAuthor.getline(SIn[i].ind, 30, '\n'))
     {
         ++i;
     }
-    secBook.close();
+    secAuthor.close();
 }
+
+
+// Function to read the linked list file into the authorLinkedList structure
+void readAuthorLinkedList()
+{
+    fstream linkedList;
+    linkedList.open("linkedListAuthor.txt", ios::in);
+
+    for (int i = 0; i < 200 && !linkedList.eof(); i++)
+    {
+        linkedList.getline(authorLinkedList[i].ind, 50, '|');
+        linkedList.getline(authorLinkedList[i].AuthorID, 30, '|');
+        linkedList.getline(authorLinkedList[i].next, 30, '\n');
+    }
+
+    linkedList.close();
+}
+
 
 char *SearchAuthorById(char *id, int low, int high)
 {
@@ -468,70 +435,6 @@ char *SearchAuthorById(char *id, int low, int high)
     return NULL;
 }
 
-// Function to read the linked list file into the authorLinkedList structure
-void readAuthorLinkedList()
-{
-    fstream linkedList;
-    linkedList.open("linkedListAuthor.txt", ios::in);
-
-    for (int i = 0; i < 200 && !linkedList.eof(); i++)
-    {
-        linkedList.getline(authorLinkedList[i].ind, 50, '|');
-        linkedList.getline(authorLinkedList[i].AuthorID, 30, '|');
-        linkedList.getline(authorLinkedList[i].next, 30, '\n');
-    }
-
-    linkedList.close();
-}
-
-// search in inverted list by the ind retreived from the secondary index and the author id that given by the user
-bool searchInInvertedlist(char *ind, char *authorId)
-{
-    int x = atoi(ind);
-    while (true)
-    {
-        if (x == -1)
-        {
-            break;
-        }
-        char *tempAuthorId = authorLinkedList[x].AuthorID;
-        char *tempAuthorNext = authorLinkedList[x].next;
-        if (strcmp(authorId, tempAuthorId) == 0)
-        {
-            return true;
-        }
-            //        get next author id for the same name
-        else
-        {
-            x = atoi(tempAuthorNext);
-        }
-    }
-    return false;
-}
-
-// search in the secondary index to get the name and index of this id if this id is already exist
-void searchInAuthorSecForName(char *id)
-{
-    readAuthorLinkedList();
-    readAuthorSecIndex();
-    if (SearchAuthorById(id, 0, author_no) == NULL)
-    {
-        cout << "author id not found  \n";
-        return;
-    }
-    //    enter author secondary file to get this name with its ind in the inverted list
-    for (int i = 0; i < author_no; ++i)
-    {
-        char *tempName = SIn[i].name;
-        char *tempInd = SIn[i].ind;
-        if (searchInInvertedlist(tempInd, id))
-        {
-            cout << "Name\n";
-            cout << tempName << "\n";
-            return;
-        }
-    }
-}
 
 char *SearchBookById(char *id, int low, int high)
 {
@@ -542,6 +445,7 @@ char *SearchBookById(char *id, int low, int high)
         if (strcmp(in[mid].id, id) == 0)
         {
             return in[mid].ind;
+
         }
         if (strcmp(in[mid].id, id) > 0)
         {
@@ -554,6 +458,8 @@ char *SearchBookById(char *id, int low, int high)
     }
     return NULL;
 }
+
+
 
 int AddAuthor()
 {
@@ -586,6 +492,7 @@ int AddAuthor()
 
     //    Update A.authorSiz by adding the length of the string representation of the original size.
     A.authorSiz += strlen(s);
+
 
     // get the last item(biggest) from the list
     auto lastItem = availAuthor.rbegin();
@@ -714,6 +621,7 @@ int AddBook()
     createBookSec(book);
 }
 
+//takes the offset that passed from search function to print its content
 void retriveAuthorRecord(char *offset)
 {
     int x = atoi(offset);
@@ -732,47 +640,7 @@ void retriveAuthorRecord(char *offset)
     ff.close();
 }
 
-void retriveAuthorName(char *offset)
-{
-    int x = atoi(offset);
-    fstream ff;
-    ff.open("Author_data.txt", ios::in);
-    ff.seekg(x, ios::beg);
-    ff.getline(offset, 10, '|');
-    ff.getline(author_Name, 50, '|');
-    ff.getline(author_id, 13, '|');
-    ff.getline(author_Address, 50, '|');
 
-    cout << '\n'
-         << "Name" << endl;
-    cout << author_Name << endl;
-    ff.close();
-}
-
-// used to search in the secondary book index to get the ind for this book
-char *SearchInBookSecByAuthorId(char *authorId, int low, int high)
-{
-    readBookSecIndex();
-    int mid;
-
-    while (low < high)
-    {
-        mid = (low + high) / 2;
-        if (strcmp(book_SIn[mid].authorId, authorId) == 0)
-        {
-            return book_SIn[mid].authorId; // Return the authorId if found
-        }
-        if (strcmp(book_SIn[mid].authorId, authorId) > 0)
-        {
-            high = mid; // Adjust high to continue searching in the left half
-        }
-        else
-        {
-            low = mid + 1; // Adjust low to continue searching in the right half
-        }
-    }
-    return nullptr; // Return nullptr if not found
-}
 
 void retriveBookRecord(char *ind)
 {
@@ -791,6 +659,7 @@ void retriveBookRecord(char *ind)
          << endl;
     ff.close();
 }
+
 
 void updateAuthorName()
 {
@@ -847,7 +716,7 @@ void updateAuthorName()
             cin >> author_Name;
 
             // Calculate the size of the updated record
-            int updatedSize = strlen(authorSiz) + strlen(author_Name) + strlen(author_id) + strlen(author_Address) + 3;
+            int updatedSize = strlen(authorSiz) + strlen(author_Name) + strlen(author_id) + strlen(author_Address) + 4;
 
             // Write the updated record to the temporary file
             tempFile << updatedSize << "|" << author_Name << "|" << author_id << "|" << author_Address << "|";
@@ -946,7 +815,7 @@ void updateBookTitle()
             cin >> bookTitle;
 
             // Calculate the size of the updated record
-            int updatedSize = strlen(bookSiz) + strlen(ISBN) + strlen(bookTitle) + strlen(Author_ID) + 3;
+            int updatedSize = strlen(bookSiz) + strlen(ISBN) + strlen(bookTitle) + strlen(Author_ID) + 4;
 
             // Write the updated record to the temporary file
             tempFile << updatedSize << "|" << ISBN << "|" << bookTitle << "|" << Author_ID << "|";
@@ -1286,7 +1155,7 @@ void PrintBookByID(char *ISBN)
 void PrintAuthorByID()
 {
     readAuthorPriIndex();
-    cout << "Enter the id: ";
+    cout << "Enter author id: ";
     cin >> Author_ID;
     if (SearchAuthorById(Author_ID, 0, author_no) != NULL)
     {
@@ -1297,13 +1166,42 @@ void PrintAuthorByID()
     return;
 }
 
+
+// used to search in the secondary book index to get the ind for this book
+//used in second query
+char *SearchInBookSecByAuthorId(char *authorId, int low, int high)
+{
+    readBookSecIndex();
+    int mid;
+
+    while (low < high)
+    {
+        mid = (low + high) / 2;
+        if (strcmp(book_SIn[mid].authorId, authorId) == 0)
+        {
+            return book_SIn[mid].authorId; // Return the authorId if found
+        }
+        if (strcmp(book_SIn[mid].authorId, authorId) > 0)
+        {
+            high = mid; // Adjust high to continue searching in the left half
+        }
+        else
+        {
+            low = mid + 1; // Adjust low to continue searching in the right half
+        }
+    }
+    return nullptr; // Return nullptr if not found
+}
+
+
 // Function to loop through the inverted list for books that contain the author ID and print the books
+//used in second query (to get books of this author)
 void printBooksFromMap(char *authorId)
 {
     // Check if the authorId exists in the secondary index
     char *authorIdCheck = SearchInBookSecByAuthorId(authorId, 0, author_no);
-
     if (authorIdCheck != nullptr)
+
     {
         cout << "Author ID already exists.\n";
         // Retrieve books associated with the author ID from the inverted list
@@ -1315,7 +1213,9 @@ void printBooksFromMap(char *authorId)
             {
                 //                 Print each book ID (ISBN)
                 cout << "Book ID: " << it->second << endl;
-                //                PrintBookByID(it->second);
+                char *tempISBN = const_cast<char *>((it->second).c_str());
+                                PrintBookByID(tempISBN);
+
                 //                Add a function call to print book details using ISBN (it->second)
             }
         }
@@ -1330,50 +1230,101 @@ void printBooksFromMap(char *authorId)
     }
 }
 
+
+
+// search in inverted list by the ind retreived from the secondary index and the author id that given by the user
+//used in third query
+bool searchInInvertedlist(char *ind, char *authorId)
+{
+//    convert the ind into int to check it if it is equal -1 to stop or not and make
+    int x = atoi(ind);
+    while (true)
+    {
+        if (x == -1)
+        {
+            break;
+        }
+//        *tempAuthorId -> is used to store the id of this author and compare it with the author id
+//          and check if they  are equal return true to make the searchInAuthorSecForName func print that name
+        char *tempAuthorId = authorLinkedList[x].AuthorID;
+//        *tempAuthorNext -> is used to store the next pointer points to that name to print it if he has the same name
+        char *tempAuthorNext = authorLinkedList[x].next;
+        if (strcmp(authorId, tempAuthorId) == 0)
+        {
+            return true;
+        }
+         //        get next author id for the same name
+        else
+        {
+            x = atoi(tempAuthorNext);
+        }
+    }
+    return false;
+}
+
+
+
+// search in the secondary index to get the name and index of this id if this id is already exist
+//used in third query
+void searchInAuthorSecForName(char *id)
+{
+    readAuthorLinkedList();
+    readAuthorSecIndex();
+    if (SearchAuthorById(id, 0, author_no) == NULL)
+    {
+        cout << "author id not found  \n";
+        return;
+    }
+    //    enter author secondary file to get this name with its ind in the inverted list
+    for (int i = 0; i < author_no; ++i)
+    {
+        char *tempName = SIn[i].name;
+        char *tempInd = SIn[i].ind;
+//        search in avail list for the temp ind and the authorId passed to this function
+
+        if (searchInInvertedlist(tempInd, id))
+        {
+            cout << "Name\n";
+            cout << tempName << "\n";
+            return;
+        }
+    }
+}
+
+
 void writeQuery()
 {
-    cout << "Enter Query: ";
-    cin.ignore(); // Clear any remaining characters in the input buffer
-    string query;
-    string tolowerQuery;
-    getline(cin, query); // Read the entire line including spaces
 
-    // Convert the query to lowercase for case-insensitive matching
-    for (int i = 0; i < query.size(); ++i)
-    {
-        tolowerQuery += tolower(query[i]);
-    }
-
-    cout << "\n"
-         << tolowerQuery << "\n";
-
-    if (tolowerQuery.find("select all from authors where author id=") != string::npos)
-    {
-        cout << "case 1.\n";
+    int choice ;
+    cout  << "enter: "
+             "\n 1 for Select all from Authors where Author id "
+             "\n 2 for Select all from Books where Author id "
+             "\n 3 for Select Author Name from Authors where Author id \n";
+    cin >> choice;
+    if (choice==1){
         PrintAuthorByID();
-    }
 
-    else if (tolowerQuery.find("select all from books where author id=") != string::npos)
-    {
-        cout << "case 2.\n";
+    }
+    else if(choice==2){
         char authorId[50];
+        cout  << "enter author id \n";
         cin >> authorId;
+
         printBooksFromMap(authorId);
     }
-
-    else if (tolowerQuery.find("select author name from authors where author id=") != string::npos)
-    {
-        cout << "case 3.\n";
+    else if(choice==3){
         char authorId[50];
+        cout  << "enter author id \n";
         cin >> authorId;
-
         searchInAuthorSecForName(authorId);
     }
-    else
-    {
+    else {
         cout << "Invalid Query" << endl;
     }
 }
+
+
+
 
 int main()
 {
